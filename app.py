@@ -418,7 +418,7 @@ def main():
         st.markdown("""
         ¿Prefieres hablar con un especialista?
         
-        📧 econ@cice.ar
+        📧 enzo@cice.ar
         """)
 
     # Inicializar base de conocimiento (silenciosamente)
@@ -591,4 +591,5 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
 
