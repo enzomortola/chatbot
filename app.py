@@ -89,11 +89,19 @@ class OpenRouterClient:
                 result = response.json()
                 return result["choices"][0]["message"]["content"]
             else:
+                error_msg = f"❌ Error OpenRouter: {response.status_code}"
+                if response.status_code == 402:
+                    error_msg += " - Límite alcanzado"
+                elif response.status_code == 429:
+                    error_msg += " - Demasiadas solicitudes"
+                st.sidebar.error(error_msg)
                 return "Lo siento, hubo un error temporal. Por favor, intenta nuevamente en un momento."
                 
         except requests.exceptions.Timeout:
+            st.sidebar.error("❌ Timeout en OpenRouter")
             return "El servicio está respondiendo lentamente. Por favor, intenta nuevamente."
         except Exception as e:
+            st.sidebar.error(f"❌ Excepción OpenRouter: {e}")
             return "En este momento tengo dificultades técnicas. Por favor, intenta nuevamente o escribe 'quiero contacto' para hablar con un especialista."
 
 # ===========================
@@ -112,12 +120,14 @@ def setup_google_sheets():
         client = gspread.authorize(creds)
         return client
     except Exception as e:
+        st.sidebar.error(f"❌ Error Google Sheets: {e}")
         return None
 
 def get_leads_sheet(client, sheet_name="leads_eset"):
     """Obtener o crear la hoja de leads"""
     try:
         sheet = client.open(sheet_name).sheet1
+        st.sidebar.success("✅ Conectado a Google Sheets")
         return sheet
     except gspread.SpreadsheetNotFound:
         try:
@@ -125,10 +135,13 @@ def get_leads_sheet(client, sheet_name="leads_eset"):
             worksheet = sheet.sheet1
             headers = ["timestamp", "nombre", "email", "telefono", "empresa", "interes", "consulta_original", "resumen_interes"]
             worksheet.append_row(headers)
+            st.sidebar.success("✅ Nueva hoja creada en Google Sheets")
             return worksheet
         except Exception as e:
+            st.sidebar.error(f"❌ Error creando hoja: {e}")
             return None
     except Exception as e:
+        st.sidebar.error(f"❌ Error accediendo a Google Sheets: {e}")
         return None
 
 def guardar_lead_sheets(form_data):
@@ -154,17 +167,20 @@ def guardar_lead_sheets(form_data):
         ]
         
         sheet.append_row(row)
+        st.sidebar.success("✅ Lead guardado en Google Sheets")
         return True
         
     except Exception as e:
+        st.sidebar.error(f"❌ Error guardando lead: {e}")
         return False
 
 # ===========================
-# FUNCIONES DE MODELO SIN DEBUG
+# FUNCIONES DE MODELO CON DEBUG
 # ===========================
 
 @st.cache_resource
 def load_embedding_model():
+    st.sidebar.info("🔄 Cargando modelo de embeddings...")
     return SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
 @st.cache_resource
@@ -173,8 +189,10 @@ def load_openrouter_model():
     try:
         api_key = st.secrets["OPENROUTER_API_KEY"]
         client = OpenRouterClient(api_key)
+        st.sidebar.success("✅ OpenRouter configurado")
         return client
     except Exception as e:
+        st.sidebar.error(f"❌ Error configurando OpenRouter: {e}")
         return None
 
 @st.cache_resource
@@ -186,8 +204,10 @@ def init_chroma_db():
     
     try:
         collection = client.get_collection("drive_documents")
+        st.sidebar.success(f"✅ DB cargada: {collection.count()} fragmentos")
     except:
         collection = client.create_collection("drive_documents")
+        st.sidebar.info("🆕 Nueva base de datos creada")
     
     return client, collection
 
@@ -225,10 +245,11 @@ def generar_resumen_interes(historial_conversacion, interes_seleccionado):
         return response.strip()
         
     except Exception as e:
+        st.sidebar.error(f"❌ Error generando resumen: {e}")
         return f"Cliente interesado en {interes_seleccionado}. Conversación: {historial_conversacion[-500:]}"
 
 # ===========================
-# FUNCIONES PDF SIN DEBUG
+# FUNCIONES PDF CON DEBUG
 # ===========================
 
 def get_pdf_from_local(filename):
@@ -237,6 +258,7 @@ def get_pdf_from_local(filename):
     if os.path.exists(pdf_path):
         return pdf_path
     else:
+        st.sidebar.error(f"❌ No encontrado: {filename}")
         return None
 
 def extract_text_from_pdf(pdf_path):
@@ -249,6 +271,7 @@ def extract_text_from_pdf(pdf_path):
                 text += page_text + "\n"
         return text if text.strip() else None
     except Exception as e:
+        st.sidebar.error(f"❌ Error leyendo PDF: {e}")
         return None
 
 def split_text(text, chunk_size=500):
@@ -264,6 +287,8 @@ def search_similar_documents(query, top_k=5):
         embedding_model = load_embedding_model()
         chroma_client, collection = init_chroma_db()
         
+        st.sidebar.info(f"🔍 Buscando: '{query}'")
+        
         query_embedding = embedding_model.encode(query).tolist()
         
         results = collection.query(
@@ -271,8 +296,12 @@ def search_similar_documents(query, top_k=5):
             n_results=top_k
         )
         
+        documentos_encontrados = len(results['documents'][0]) if results['documents'] else 0
+        st.sidebar.info(f"📄 Encontrados: {documentos_encontrados} documentos")
+        
         return results['documents'][0] if results['documents'] else []
     except Exception as e:
+        st.sidebar.error(f"❌ Error en búsqueda: {e}")
         return []
 
 def generate_contextual_response(query, context_documents):
@@ -305,24 +334,29 @@ RESPUESTA:"""
         return response
         
     except Exception as e:
+        st.sidebar.error(f"❌ Error generando respuesta: {e}")
         return f"Como especialista en ESET, puedo ayudarte con información sobre nuestros productos de ciberseguridad. Para tu pregunta sobre '{query}', te recomiendo contactar con nuestro equipo de ventas."
 
 @st.cache_resource
 def initialize_knowledge_base():
     """Carga PDFs desde carpeta local y crea la base de conocimiento"""
+    st.sidebar.info("🔄 Inicializando base de conocimiento...")
     
     embedding_model = load_embedding_model()
     chroma_client, collection = init_chroma_db()
     
     # Verificar si ya existe data
     if collection.count() > 0:
+        st.sidebar.success(f"✅ Base lista: {collection.count()} fragmentos")
         return True
     
     # Verificar carpeta de documentos
     if not os.path.exists(DOCUMENTS_FOLDER):
+        st.sidebar.error(f"❌ No existe carpeta: {DOCUMENTS_FOLDER}")
         return False
     
     archivos_encontrados = os.listdir(DOCUMENTS_FOLDER)
+    st.sidebar.info(f"📁 Archivos en carpeta: {len(archivos_encontrados)}")
     
     all_chunks = []
     all_embeddings = []
@@ -349,10 +383,11 @@ def initialize_knowledge_base():
                     })
                 
                 processed_files += 1
+                st.sidebar.success(f"✅ Procesado: {pdf_filename}")
             else:
-                pass
+                st.sidebar.warning(f"⚠️ Texto insuficiente: {pdf_filename}")
         else:
-            pass
+            st.sidebar.error(f"❌ No encontrado: {pdf_filename}")
     
     if all_chunks:
         collection.add(
@@ -361,8 +396,10 @@ def initialize_knowledge_base():
             metadatas=all_metadata,
             ids=[f"doc_{i}" for i in range(len(all_chunks))]
         )
+        st.sidebar.success(f"🎉 Base creada: {processed_files} PDFs, {len(all_chunks)} fragmentos")
         return True
     else:
+        st.sidebar.error("❌ No se pudo crear la base de conocimiento")
         return False
 
 # ===========================
@@ -375,7 +412,7 @@ def main():
     st.markdown("### Especialista en productos de ciberseguridad")
     st.markdown("---")
     
-    # Sidebar SOLO con información para el cliente (sin debug)
+    # Sidebar con información para el cliente Y debug
     with st.sidebar:
         st.header("💬 Chat ESET")
         st.markdown("""
@@ -395,10 +432,12 @@ def main():
         ¿Prefieres hablar con un especialista?
         
         📧 enzo@cice.ar
-        📲 +54-9-11-2479-7731
         """)
-    
-    # Inicializar base de conocimiento SIN DEBUG
+        
+        st.divider()
+        st.markdown("**🔧 Estado del Sistema**")
+        
+    # Inicializar base de conocimiento CON DEBUG
     knowledge_loaded = initialize_knowledge_base()
     
     # Inicializar session state
@@ -568,5 +607,4 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
-
 
