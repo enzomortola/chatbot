@@ -8,6 +8,7 @@ import chromadb
 from chromadb.config import Settings
 import numpy as np
 import datetime
+import csv
 import pandas as pd
 from pathlib import Path
 import io
@@ -42,22 +43,17 @@ PDF_FILES = [
 
 # Palabras clave para detectar interés en contacto
 CONTACT_KEYWORDS = [
-    'contacto', 'contactarme', 'contáctenme', 'quiero contacto', 'quiero que me contacten',
-    'quiero hablar con alguien', 'quiero hablar con un asesor', 'hablar con un representante',
-    'quiero comunicarme', 'necesito comunicarme', 'comunicarme con alguien',
-    'necesito que me llamen', 'quiero que me llamen', 'que me escriban',
-    'que me contacten', 'me pueden llamar', 'me pueden escribir', 'me pueden contactar',
-    'llámenme', 'llamame', 'llamenme', 'escribanme', 'escríbanme', 'mandenme mensaje',
-    'envíenme un correo', 'mandame un whatsapp', 'escribime por whatsapp',
-    'dejar mis datos', 'dejar mis datos de contacto', 'pasar mis datos',
-    'pasar mi número', 'pasar mi teléfono', 'les dejo mis datos', 'les dejo mi teléfono',
-    'quiero recibir información', 'quiero recibir asesoramiento', 'quiero más info',
-    'me gustaría que me contacten', 'quiero información personalizada',
-    'quiero recibir una llamada', 'necesito asistencia', 'quiero asistencia comercial','llamemen','llaamar', 'me intereza'
+    'contacto', 'contactarme', 'dejar mis datos', 'llámenme', 'escribanme',
+    'quiero que me contacten', 'datos de contacto', 'hablar con un ejecutivo',
+    'asesor comercial', 'agendar reunión', 'cotización', 'presupuesto', 'me interesa'
 ]
 
+# CONFIGURACIÓN CSV (como respaldo)
+LEADS_CSV_PATH = "leads_eset.csv"
+CSV_HEADERS = ["timestamp", "nombre", "email", "telefono", "empresa", "interes", "consulta_original", "resumen_interes"]
+
 # ===========================
-# FUNCIONES GOOGLE SHEETS (SOLO ESTO)
+# FUNCIONES GOOGLE SHEETS (SIN CAMBIOS)
 # ===========================
 
 def setup_google_sheets():
@@ -72,14 +68,12 @@ def setup_google_sheets():
         client = gspread.authorize(creds)
         return client
     except Exception as e:
-        st.sidebar.error(f"❌ Error Google Sheets: {e}")
         return None
 
 def get_leads_sheet(client, sheet_name="leads_eset"):
     """Obtener o crear la hoja de leads"""
     try:
         sheet = client.open(sheet_name).sheet1
-        st.sidebar.success("✅ Conectado a Google Sheets")
         return sheet
     except gspread.SpreadsheetNotFound:
         try:
@@ -87,28 +81,21 @@ def get_leads_sheet(client, sheet_name="leads_eset"):
             worksheet = sheet.sheet1
             headers = ["timestamp", "nombre", "email", "telefono", "empresa", "interes", "consulta_original", "resumen_interes"]
             worksheet.append_row(headers)
-            st.sidebar.success("✅ Nueva hoja creada en Google Sheets")
             return worksheet
         except Exception as e:
-            st.sidebar.error(f"❌ Error creando hoja: {e}")
             return None
     except Exception as e:
-        st.sidebar.error(f"❌ Error accediendo a Google Sheets: {e}")
         return None
 
 def guardar_lead_sheets(form_data):
     """Guardar lead en Google Sheets"""
     try:
-        st.sidebar.info("🔄 Conectando a Google Sheets...")
         client = setup_google_sheets()
         if not client:
-            st.sidebar.error("❌ No se pudo conectar a Google Sheets")
             return False
         
-        st.sidebar.info("📊 Accediendo a la hoja...")
         sheet = get_leads_sheet(client)
         if not sheet:
-            st.sidebar.error("❌ No se pudo acceder a la hoja 'leads_eset'")
             return False
         
         row = [
@@ -122,22 +109,102 @@ def guardar_lead_sheets(form_data):
             form_data['resumen_interes']
         ]
         
-        st.sidebar.info("💾 Guardando datos...")
         sheet.append_row(row)
-        st.sidebar.success("✅ Lead guardado en Google Sheets")
         return True
         
     except Exception as e:
-        st.sidebar.error(f"❌ Error específico: {str(e)}")
         return False
 
+def cargar_leads_sheets():
+    """Cargar todos los leads desde Google Sheets"""
+    try:
+        client = setup_google_sheets()
+        if not client:
+            return []
+        
+        sheet = get_leads_sheet(client)
+        if not sheet:
+            return []
+        
+        records = sheet.get_all_records()
+        return records
+        
+    except Exception as e:
+        return []
+
 # ===========================
-# FUNCIONES DE MODELO CON DEBUG
+# FUNCIONES CSV (RESPALDO)
+# ===========================
+
+def inicializar_csv():
+    """Crear archivo CSV si no existe"""
+    try:
+        if not os.path.exists(LEADS_CSV_PATH):
+            with open(LEADS_CSV_PATH, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow(CSV_HEADERS)
+        return True
+    except Exception as e:
+        return False
+
+def guardar_lead_csv(form_data):
+    """Guardar lead en CSV (respaldo)"""
+    try:
+        inicializar_csv()
+        
+        row = [
+            form_data['timestamp'],
+            form_data['nombre'],
+            form_data['email'],
+            form_data['telefono'],
+            form_data['empresa'],
+            form_data['interes'],
+            form_data['consulta_original'],
+            form_data['resumen_interes']
+        ]
+        
+        with open(LEADS_CSV_PATH, 'a', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow(row)
+        
+        return True
+        
+    except Exception as e:
+        return False
+
+def cargar_leads_csv():
+    """Cargar todos los leads desde CSV"""
+    try:
+        if not os.path.exists(LEADS_CSV_PATH):
+            return []
+        
+        leads = []
+        with open(LEADS_CSV_PATH, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            leads = list(reader)
+        
+        return leads
+        
+    except Exception as e:
+        return []
+
+# ===========================
+# FUNCIONES DE GUARDADO HÍBRIDO
+# ===========================
+
+def guardar_lead_hibrido(form_data):
+    """Guardar en Google Sheets y CSV local como respaldo"""
+    success_sheets = guardar_lead_sheets(form_data)
+    success_csv = guardar_lead_csv(form_data)
+    
+    return success_sheets or success_csv
+
+# ===========================
+# FUNCIONES DE MODELO (SIN CAMBIOS)
 # ===========================
 
 @st.cache_resource
 def load_embedding_model():
-    st.sidebar.info("🔄 Cargando modelo de embeddings...")
     return SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
 @st.cache_resource
@@ -155,10 +222,8 @@ def init_chroma_db():
     
     try:
         collection = client.get_collection("drive_documents")
-        st.sidebar.success(f"✅ DB cargada: {collection.count()} fragmentos")
     except:
         collection = client.create_collection("drive_documents")
-        st.sidebar.info("🆕 Nueva base de datos creada")
     
     return client, collection
 
@@ -174,7 +239,7 @@ def generar_resumen_interes(historial_conversacion, interes_seleccionado):
         
         prompt = f"""
         Eres un asistente de ventas de ESET. Analiza la siguiente conversación y genera un resumen conciso 
-        (máximo 100 palabras) sobre los intereses específicos del cliente en productos ESET.
+        (máximo 150 palabras) sobre los intereses específicos del cliente en productos ESET.
         
         INTERÉS SELECCIONADO POR EL CLIENTE: {interes_seleccionado}
         
@@ -197,7 +262,7 @@ def generar_resumen_interes(historial_conversacion, interes_seleccionado):
         return f"Cliente interesado en {interes_seleccionado}. Conversación: {historial_conversacion[-500:]}"
 
 # ===========================
-# FUNCIONES PDF CON DEBUG
+# FUNCIONES PDF (SIN CAMBIOS)
 # ===========================
 
 def get_pdf_from_local(filename):
@@ -206,7 +271,6 @@ def get_pdf_from_local(filename):
     if os.path.exists(pdf_path):
         return pdf_path
     else:
-        st.sidebar.error(f"❌ No encontrado: {filename}")
         return None
 
 def extract_text_from_pdf(pdf_path):
@@ -219,7 +283,6 @@ def extract_text_from_pdf(pdf_path):
                 text += page_text + "\n"
         return text if text.strip() else None
     except Exception as e:
-        st.sidebar.error(f"❌ Error leyendo PDF: {e}")
         return None
 
 def split_text(text, chunk_size=500):
@@ -235,8 +298,6 @@ def search_similar_documents(query, top_k=5):
         embedding_model = load_embedding_model()
         chroma_client, collection = init_chroma_db()
         
-        st.sidebar.info(f"🔍 Buscando: '{query}'")
-        
         query_embedding = embedding_model.encode(query).tolist()
         
         results = collection.query(
@@ -244,12 +305,8 @@ def search_similar_documents(query, top_k=5):
             n_results=top_k
         )
         
-        documentos_encontrados = len(results['documents'][0]) if results['documents'] else 0
-        st.sidebar.info(f"📄 Encontrados: {documentos_encontrados} documentos")
-        
         return results['documents'][0] if results['documents'] else []
-    except Exception as e:
-        st.sidebar.error(f"❌ Error en búsqueda: {e}")
+    except:
         return []
 
 def generate_contextual_response(query, context_documents):
@@ -266,7 +323,7 @@ INFORMACIÓN RELEVANTE DE NUESTROS DOCUMENTOS:
 
 PREGUNTA DEL CLIENTE: {query}
 
-Responde como un vendedor profesional de ESET usando la información proporcionada.
+Responde como un vendedor profesional de ESET.
 
 RESPUESTA:"""
         else:
@@ -280,39 +337,28 @@ RESPUESTA:"""
         return response.text
         
     except Exception as e:
-        st.sidebar.error(f"❌ Error generando respuesta: {e}")
         return f"Como especialista en ESET, puedo ayudarte con información sobre nuestros productos de ciberseguridad. Para tu pregunta sobre '{query}', te recomiendo contactar con nuestro equipo de ventas."
 
 @st.cache_resource
 def initialize_knowledge_base():
     """Carga PDFs desde carpeta local y crea la base de conocimiento"""
-    st.sidebar.info("🔄 Inicializando base de conocimiento...")
-    
     embedding_model = load_embedding_model()
     chroma_client, collection = init_chroma_db()
     
-    # Verificar si ya existe data
     if collection.count() > 0:
-        st.sidebar.success(f"✅ Base lista: {collection.count()} fragmentos")
         return True
     
-    # Verificar carpeta de documentos
     if not os.path.exists(DOCUMENTS_FOLDER):
-        st.sidebar.error(f"❌ No existe carpeta: {DOCUMENTS_FOLDER}")
         return False
-    
-    archivos_encontrados = os.listdir(DOCUMENTS_FOLDER)
-    st.sidebar.info(f"📁 Archivos en carpeta: {len(archivos_encontrados)}")
     
     all_chunks = []
     all_embeddings = []
     all_metadata = []
-    processed_files = 0
     
     for pdf_filename in PDF_FILES:
         pdf_path = get_pdf_from_local(pdf_filename)
         
-        if pdf_path and os.path.exists(pdf_path):
+        if pdf_path:
             text = extract_text_from_pdf(pdf_path)
             
             if text and len(text.strip()) > 100:
@@ -320,6 +366,7 @@ def initialize_knowledge_base():
                 
                 for i, chunk in enumerate(chunks):
                     embedding = embedding_model.encode(chunk).tolist()
+                    
                     all_chunks.append(chunk)
                     all_embeddings.append(embedding)
                     all_metadata.append({
@@ -327,13 +374,6 @@ def initialize_knowledge_base():
                         "chunk_id": i,
                         "total_chunks": len(chunks)
                     })
-                
-                processed_files += 1
-                st.sidebar.success(f"✅ Procesado: {pdf_filename}")
-            else:
-                st.sidebar.warning(f"⚠️ Texto insuficiente: {pdf_filename}")
-        else:
-            st.sidebar.error(f"❌ No encontrado: {pdf_filename}")
     
     if all_chunks:
         collection.add(
@@ -342,23 +382,24 @@ def initialize_knowledge_base():
             metadatas=all_metadata,
             ids=[f"doc_{i}" for i in range(len(all_chunks))]
         )
-        st.sidebar.success(f"🎉 Base creada: {processed_files} PDFs, {len(all_chunks)} fragmentos")
         return True
-    else:
-        st.sidebar.error("❌ No se pudo crear la base de conocimiento")
-        return False
+    
+    return False
 
 # ===========================
-# INTERFAZ PRINCIPAL
+# INTERFAZ PRINCIPAL LIMPIA
 # ===========================
 
 def main():
+    # Inicializar CSV al inicio (silenciosamente)
+    inicializar_csv()
+    
     # Interfaz limpia y profesional
     st.title("🤖 Asistente de Ventas ESET")
     st.markdown("### Especialista en productos de ciberseguridad")
     st.markdown("---")
     
-    # Sidebar con información para el cliente Y debug
+    # Sidebar limpio - solo información para el cliente
     with st.sidebar:
         st.header("💬 Chat ESET")
         st.markdown("""
@@ -377,13 +418,10 @@ def main():
         st.markdown("""
         ¿Prefieres hablar con un especialista?
         
-        📧 enzo@cice.ar
+        📧 econ@cice.ar
         """)
-        
-        st.divider()
-        st.markdown("**🔧 Estado del Sistema**")
-        
-    # Inicializar base de conocimiento CON DEBUG
+
+    # Inicializar base de conocimiento (silenciosamente)
     knowledge_loaded = initialize_knowledge_base()
     
     # Inicializar session state
@@ -462,8 +500,8 @@ def main():
                         'resumen_interes': resumen_interes
                     }
                     
-                    # Guardar SOLO en Google Sheets
-                    if guardar_lead_sheets(form_data):
+                    # Guardar en Google Sheets + CSV
+                    if guardar_lead_hibrido(form_data):
                         st.success("✅ ¡Datos enviados correctamente!")
                         st.balloons()
                         
