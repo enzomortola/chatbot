@@ -43,7 +43,7 @@ PDF_FILES = [
 
 # Palabras clave para detectar interés en contacto
 CONTACT_KEYWORDS = [
-    'contacto', 'contactarme', 'dejar mis datos', 'llámenme', 'escribanme',
+    'contacto', 'contactarme', 'dejar mis datos', 'llámenme', 'escribanme', 'quisiera que me contacten','llamemen','asesor',
     'quiero que me contacten', 'datos de contacto', 'hablar con un ejecutivo',
     'asesor comercial', 'agendar reunión', 'cotización', 'presupuesto', 'me interesa'
 ]
@@ -591,3 +591,4 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
