@@ -67,7 +67,7 @@ class OpenRouterClient:
         """Generar contenido usando OpenRouter API"""
         try:
             payload = {
-                "model": "kwaipilot/kat-coder-pro:free",  # Modelo gratuito
+                "model": "google/gemini-2.0-flash-exp:free",  # Modelo gratuito
                 "messages": [
                     {
                         "role": "user",
@@ -607,4 +607,5 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
 
