@@ -369,39 +369,6 @@ def init_chroma_db():
     
     return client, collection
 
-def extract_contact_intent(message):
-    """Detectar si el usuario muestra interés en contacto - SOLO DETECTAR, NO ACTIVAR"""
-    message_lower = message.lower().strip()
-    
-    import string
-    message_clean = message_lower.translate(str.maketrans('', '', string.punctuation))
-    
-    # PALABRAS que indican INTERÉS en contacto (no urgencia)
-    contact_interest_keywords = [
-        'contacto', 'contactar', 'contactarme', 'llamar', 'llámenme', 
-        'escribir', 'escribanme', 'datos de contacto', 'hablar con asesor',
-        'ejecutivo', 'asesor', 'reunión', 'cita', 'cotización', 'presupuesto',
-        'quiero que me contacten', 'deseo contacto', 'me interesa contacto',
-        'agendar', 'coordinAR'
-    ]
-    
-    # PALABRAS que son SOLO CONSULTA (no mostrar interés en contacto)
-    inquiry_only_keywords = [
-        'precio', 'precios', 'costo', 'costos', 'valor', 'tarifa',
-        'catálogo', 'catalogo', 'opciones', 'productos', 'servicios',
-        'qué tienen', 'que tienen', 'información', 'info', 'consultar'
-    ]
-    
-    # Si tiene palabras de interés EN contacto
-    has_contact_interest = any(keyword in message_clean for keyword in contact_interest_keywords)
-    
-    # Si tiene palabras de SOLO consulta (sin interés en contacto)
-    has_only_inquiry = any(keyword in message_clean for keyword in inquiry_only_keywords)
-    
-    # SOLO detectar interés si menciona contacto explícitamente
-    # No activar por solo "precios" o "catálogo"
-    return has_contact_interest
-    
 def generar_resumen_interes(historial_conversacion, interes_seleccionado):
     """Generar un resumen de lo que el cliente está interesado en comprar"""
     try:
@@ -881,3 +848,4 @@ Podemos:
     # MOSTRAR DASHBOARD ADMIN SOLO SI ESTÁ ACTIVADO
     if st.session_state.get('show_admin', False):
         mostrar_dashboard_admin()
+
