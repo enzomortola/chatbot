@@ -145,28 +145,28 @@ class OpenRouterClient:
                 "temperature": 0.7,
                 "max_tokens": MAX_TOKENS  # 👈 USAR VARIABLE GLOBAL
             }
-            
+        
             response = requests.post(
                 self.base_url, 
                 headers=self.headers, 
                 json=payload,
                 timeout=60
             )
-            
+        
             if response.status_code == 200:
                 result = response.json()
                 respuesta_final = result["choices"][0]["message"]["content"]
-                
+            
                 # 👇 GUARDAR TOKENS USADOS
                 uso = calcular_tokens_y_costo(prompt, respuesta_final, payload["model"])
                 
                 # Inicializar si no existe
                 if "uso_tokens" not in st.session_state:
                     st.session_state.uso_tokens = []
-                
-                # Guardar en session state
+            
+            # Guardar en session state
                 st.session_state.uso_tokens.append(uso)
-                
+            
                 return respuesta_final
             else:
                 error_msg = f"❌ Error OpenRouter: {response.status_code}"
@@ -702,3 +702,4 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
