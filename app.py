@@ -15,7 +15,24 @@ import io
 import gspread
 from google.oauth2.service_account import Credentials
 
-ADMIN_PASSWORD = "eset_admin_ciceEnzo"  # Agregar esta línea
+ADMIN_PASSWORD = "eset_admin_ciceEnzo"
+MAX_TOKENS = 500  # 👈 VARIABLE GLOBAL PARA TOKENS
+
+def calcular_tokens_y_costo(prompt, response, model_used):
+    """
+    Estimar tokens usados y costo aproximado
+    """
+    # Estimación aproximada: 1 token ≈ 0.75 palabras en español
+    prompt_tokens_est = len(prompt.split()) * 1.3
+    response_tokens_est = len(response.split()) * 1.3
+    
+    return {
+        "prompt_tokens": int(prompt_tokens_est),
+        "completion_tokens": int(response_tokens_est),
+        "total_tokens": int(prompt_tokens_est + response_tokens_est),
+        "modelo": model_used,
+        "timestamp": datetime.datetime.now().strftime("%H:%M:%S")
+    }
 
 def mostrar_dashboard_admin():
     st.title("🔧 Dashboard de Administración - ESET")
@@ -38,7 +55,9 @@ def mostrar_dashboard_admin():
         st.subheader("📊 Últimas Consultas")
         if len(datos) > 0:
             df = pd.DataFrame(datos[-10:])  # Últimas 10
-            st.dataframe(df[['prompt_tokens', 'completion_tokens', 'total_tokens', 'modelo']])
+            st.dataframe(df[['timestamp', 'prompt_tokens', 'completion_tokens', 'total_tokens', 'modelo']])
+    else:
+        st.info("📝 Aún no hay datos de consultas. Realiza algunas preguntas en el chat.")
     
     # Estadísticas de conversación
     st.subheader("💬 Estadísticas de Chat")
@@ -55,7 +74,7 @@ def mostrar_dashboard_admin():
     # Configuración
     st.subheader("⚙️ Configuración Actual")
     st.info(f"**Modelo:** google/gemini-2.0-flash-exp:free")
-    st.info(f"**Límite tokens/respuesta:** 1,024")
+    st.info(f"**Límite tokens/respuesta:** {MAX_TOKENS}")  # 👈 USAR VARIABLE
     st.info(f"**PDFs cargados:** {len(PDF_FILES)}")
     
     # Botón para limpiar datos
@@ -116,7 +135,7 @@ class OpenRouterClient:
         """Generar contenido usando OpenRouter API"""
         try:
             payload = {
-                "model": "google/gemini-2.0-flash-exp:free",  # Modelo gratuito
+                "model": "google/gemini-2.0-flash-exp:free",
                 "messages": [
                     {
                         "role": "user",
@@ -124,7 +143,7 @@ class OpenRouterClient:
                     }
                 ],
                 "temperature": 0.7,
-                "max_tokens": 500
+                "max_tokens": MAX_TOKENS  # 👈 USAR VARIABLE GLOBAL
             }
             
             response = requests.post(
@@ -136,7 +155,19 @@ class OpenRouterClient:
             
             if response.status_code == 200:
                 result = response.json()
-                return result["choices"][0]["message"]["content"]
+                respuesta_final = result["choices"][0]["message"]["content"]
+                
+                # 👇 GUARDAR TOKENS USADOS
+                uso = calcular_tokens_y_costo(prompt, respuesta_final, payload["model"])
+                
+                # Inicializar si no existe
+                if "uso_tokens" not in st.session_state:
+                    st.session_state.uso_tokens = []
+                
+                # Guardar en session state
+                st.session_state.uso_tokens.append(uso)
+                
+                return respuesta_final
             else:
                 error_msg = f"❌ Error OpenRouter: {response.status_code}"
                 if response.status_code == 402:
@@ -671,4 +702,3 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
-
