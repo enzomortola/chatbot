@@ -370,48 +370,38 @@ def init_chroma_db():
     return client, collection
 
 def extract_contact_intent(message):
-    """Detectar si el usuario quiere dejar datos de contacto - VERSIÓN MEJORADA"""
+    """Detectar si el usuario muestra interés en contacto - SOLO DETECTAR, NO ACTIVAR"""
     message_lower = message.lower().strip()
     
-    # Limpiar el texto de signos de puntuación
     import string
     message_clean = message_lower.translate(str.maketrans('', '', string.punctuation))
     
-    # Verificar palabras clave individuales
-    for keyword in CONTACT_KEYWORDS:
-        if keyword in message_clean:
-            return True
-    
-    # Verificar patrones comunes
-    patterns = [
-        r'me gustaría.*contacto',
-        r'quisiera.*contacto', 
-        r'necesito.*contacto',
-        r'deseo.*contacto',
-        r'quiero.*contacto',
-        r'me pueden.*contactar',
-        r'pueden.*contactarme',
-        r'hablar.*con.*alguien',
-        r'hablar.*persona',
-        r'asesoramiento',
-        r'consultar.*precio',
-        r'información.*precio',
-        r'cuanto.*cuesta',
-        r'valor.*producto',
-        r'me interesa.*comprar',
-        r'quiero.*comprar',
-        r'deseo.*comprar',
-        r'necesito.*comprar',
-        r'adquirir.*producto',
-        r'contratar.*servicio'
+    # PALABRAS que indican INTERÉS en contacto (no urgencia)
+    contact_interest_keywords = [
+        'contacto', 'contactar', 'contactarme', 'llamar', 'llámenme', 
+        'escribir', 'escribanme', 'datos de contacto', 'hablar con asesor',
+        'ejecutivo', 'asesor', 'reunión', 'cita', 'cotización', 'presupuesto',
+        'quiero que me contacten', 'deseo contacto', 'me interesa contacto',
+        'agendar', 'coordinAR'
     ]
     
-    for pattern in patterns:
-        if re.search(pattern, message_clean):
-            return True
+    # PALABRAS que son SOLO CONSULTA (no mostrar interés en contacto)
+    inquiry_only_keywords = [
+        'precio', 'precios', 'costo', 'costos', 'valor', 'tarifa',
+        'catálogo', 'catalogo', 'opciones', 'productos', 'servicios',
+        'qué tienen', 'que tienen', 'información', 'info', 'consultar'
+    ]
     
-    return False
-
+    # Si tiene palabras de interés EN contacto
+    has_contact_interest = any(keyword in message_clean for keyword in contact_interest_keywords)
+    
+    # Si tiene palabras de SOLO consulta (sin interés en contacto)
+    has_only_inquiry = any(keyword in message_clean for keyword in inquiry_only_keywords)
+    
+    # SOLO detectar interés si menciona contacto explícitamente
+    # No activar por solo "precios" o "catálogo"
+    return has_contact_interest
+    
 def generar_resumen_interes(historial_conversacion, interes_seleccionado):
     """Generar un resumen de lo que el cliente está interesado en comprar"""
     try:
@@ -776,65 +766,61 @@ Un especialista de ESET te contactará en las próximas 24 horas.
                         st.error("❌ Hubo un error al guardar tus datos. Por favor intenta nuevamente.")
     
     # Input del usuario - SOLO si NO hay formulario activo
-    if not st.session_state.awaiting_form:
-        if prompt := st.chat_input("Escribe tu pregunta sobre productos ESET..."):
-            # Guardar último query
-            st.session_state.last_query = prompt
-            
-            # Agregar mensaje del usuario
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            
-            # Mostrar mensaje del usuario inmediatamente
-            with st.chat_message("user"):
-                st.markdown(prompt)
-            
-            # Verificar intención de contacto
-            is_contact_intent = extract_contact_intent(prompt)
-            
-            if is_contact_intent:
-                # Activar formulario SIMPLIFICADO
-                contact_response = """¡Perfecto! Veo que quieres que te contactemos. 
+    # Input del usuario - SOLO si NO hay formulario activo
+if not st.session_state.awaiting_form:
+    if prompt := st.chat_input("Escribe tu pregunta sobre productos ESET..."):
+        # Guardar último query
+        st.session_state.last_query = prompt
+        
+        # Agregar mensaje del usuario
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        
+        # Mostrar mensaje del usuario inmediatamente
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        
+        # Verificar si muestra interés en contacto
+        shows_contact_interest = extract_contact_intent(prompt)
+        
+        with st.chat_message("assistant"):
+            with st.spinner("Buscando información..."):
+                try:
+                    # PRIMERO: Respuesta rápida si existe
+                    quick_response = generate_quick_response(prompt)
+                    if quick_response:
+                        response_text = quick_response
+                    else:
+                        # Búsqueda normal
+                        relevant_docs = search_similar_documents(prompt, top_k=3)
+                        response_text = generate_contextual_response(prompt, relevant_docs)
+                    
+                    # MOSTRAR la respuesta principal
+                    st.markdown(response_text)
+                    st.session_state.messages.append({"role": "assistant", "content": response_text})
+                    
+                    # LUEGO: Si muestra interés en contacto, INVITAR (no forzar)
+                    if shows_contact_interest:
+                        st.markdown("---")
+                        invitation_msg = """**¿Te gustaría que un especialista te contacte personalmente?** 
 
-**Solo necesitamos tu teléfono** 📞 para poder llamarte.
+Podemos:
+- 📞 Llamarte para resolver todas tus dudas
+- ✉️ Enviarte una cotización detallada  
+- 🎯 Asesorarte según tus necesidades específicas
 
-👇 **Completa el formulario rápido** (solo el teléfono es obligatorio)
-
-Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
-- ✅ Responder todas tus preguntas
-- ✅ Asesorarte personalmente  
-- ✅ Entregarte una cotización si lo deseas
-
-¡Es rápido y sin compromiso! 🚀"""
-                
-                st.session_state.messages.append({"role": "assistant", "content": contact_response})
-                
-                # Mostrar respuesta del asistente inmediatamente
-                with st.chat_message("assistant"):
-                    st.markdown(contact_response)
-                
-                st.session_state.awaiting_form = True
-                
-                # Recargar para mostrar el formulario
-                st.rerun()
-            
-            else:
-                # Búsqueda normal
-                with st.chat_message("assistant"):
-                    with st.spinner("Buscando información..."):
-                        try:
-                            relevant_docs = search_similar_documents(prompt, top_k=5)
-                            response = generate_contextual_response(prompt, relevant_docs)
-                            st.markdown(response)
-                            st.session_state.messages.append({"role": "assistant", "content": response})
-                            
-                            # Sugerir contacto si es relevante
-                            if any(word in prompt.lower() for word in ['precio', 'costo', 'cotiz', 'compra', 'licencia', 'demo']):
-                                st.info("💡 **¿Te interesa una cotización personalizada?** Escribe 'quiero contacto' y te llamamos.")
+**Solo dime "sí" o escribe "contacto" y te ayudo con el proceso.** 😊"""
                         
-                        except Exception as e:
-                            error_msg = f"En este momento tengo dificultades técnicas. Para tu pregunta sobre '{prompt}', te recomiendo escribir 'quiero contacto' para que un especialista te atienda personalmente."
-                            st.markdown(error_msg)
-                            st.session_state.messages.append({"role": "assistant", "content": error_msg})
+                        st.markdown(invitation_msg)
+                        st.session_state.messages.append({"role": "assistant", "content": invitation_msg})
+                    
+                    # O: Si es consulta de precios/catálogo, sugerir contacto amablemente
+                    elif any(word in prompt.lower() for word in ['precio', 'costo', 'cotiz', 'catálogo', 'catalogo']):
+                        st.info("💡 **¿Te interesa una cotización personalizada?** Solo dime *sí* o escribe *contacto* 📞")
+                        
+                except Exception as e:
+                    error_msg = "¡En este momento te recomiendo contactar directamente a nuestro equipo para la mejor atención! 📞"
+                    st.markdown(error_msg)
+                    st.session_state.messages.append({"role": "assistant", "content": error_msg})
 
     # MOSTRAR DASHBOARD ADMIN SOLO SI ESTÁ ACTIVADO
     if st.session_state.get('show_admin', False):
@@ -842,6 +828,7 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
 
 
 
