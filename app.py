@@ -144,58 +144,77 @@ class OpenRouterClient:
         self.model_success_count = {model: 0 for model in self.model_cascade}
 
     def generate_content(self, prompt):
-        """Generar contenido usando OpenRouter API"""
-        try:
-            payload = {
-                "model": "google/gemini-2.0-flash-exp:free",
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                "temperature": 0.7,
-                "max_tokens": MAX_TOKENS  # 👈 USAR VARIABLE GLOBAL
-            }
+        """Intenta con cada modelo en cascada hasta encontrar uno que funcione"""
         
-            response = requests.post(
-                self.base_url, 
-                headers=self.headers, 
-                json=payload,
-                timeout=60
-            )
-        
-            if response.status_code == 200:
-                result = response.json()
-                respuesta_final = result["choices"][0]["message"]["content"]
-            
-                # 👇 GUARDAR TOKENS USADOS
-                uso = calcular_tokens_y_costo(prompt, respuesta_final, payload["model"])
+        for i, model in enumerate(self.model_cascade[self.current_model_index:], self.current_model_index):
+            try:
+                st.sidebar.info(f"🔄 Probando modelo: {model.split('/')[-1]}")
                 
-                # Inicializar si no existe
-                if "uso_tokens" not in st.session_state:
-                    st.session_state.uso_tokens = []
-            
-            # Guardar en session state
-                st.session_state.uso_tokens.append(uso)
-            
-                return respuesta_final
-            else:
-                error_msg = f"❌ Error OpenRouter: {response.status_code}"
-                if response.status_code == 402:
-                    error_msg += " - Límite alcanzado"
+                payload = {
+                    "model": model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.7,
+                    "max_tokens": MAX_TOKENS
+                }
+                
+                response = requests.post(
+                    self.base_url, 
+                    headers=self.headers, 
+                    json=payload, 
+                    timeout=45
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    respuesta_final = result["choices"][0]["message"]["content"]
+                    
+                    # ✅ ÉXITO: Actualizar estadísticas y modelo preferido
+                    self.model_success_count[model] += 1
+                    self.current_model_index = i  # Usar este modelo como principal por ahora
+                    
+                    # Guardar métricas
+                    uso = calcular_tokens_y_costo(prompt, respuesta_final, model)
+                    if "uso_tokens" not in st.session_state:
+                        st.session_state.uso_tokens = []
+                    st.session_state.uso_tokens.append(uso)
+                    
+                    st.sidebar.success(f"✅ Modelo exitoso: {model.split('/')[-1]}")
+                    return respuesta_final
+                    
                 elif response.status_code == 429:
-                    error_msg += " - Demasiadas solicitudes"
-                st.sidebar.error(error_msg)
-                return "Lo siento, hubo un error temporal. Por favor, intenta nuevamente en un momento."
+                    st.sidebar.warning(f"⏳ Límite en: {model.split('/')[-1]}, probando siguiente...")
+                    continue  # Pasar al siguiente modelo
+                    
+                else:
+                    st.sidebar.warning(f"⚠️ Error {response.status_code} en {model.split('/')[-1]}")
+                    continue
+                    
+            except requests.exceptions.Timeout:
+                st.sidebar.warning(f"⏰ Timeout en {model.split('/')[-1]}, probando siguiente...")
+                continue
                 
-        except requests.exceptions.Timeout:
-            st.sidebar.error("❌ Timeout en OpenRouter")
-            return "El servicio está respondiendo lentamente. Por favor, intenta nuevamente."
-        except Exception as e:
-            st.sidebar.error(f"❌ Excepción OpenRouter: {e}")
-            return "En este momento tengo dificultades técnicas. Por favor, intenta nuevamente o escribe 'quiero contacto' para hablar con un especialista."
+            except Exception as e:
+                st.sidebar.warning(f"❌ Error en {model.split('/')[-1]}: {str(e)[:50]}...")
+                continue
+        
+        # 🔴 SI TODOS LOS MODELOS FALLAN
+        st.sidebar.error("🚨 Todos los modelos fallaron")
+        return self._get_fallback_response(prompt)
 
+    def _get_fallback_response(self, prompt):
+        """Respuesta de emergencia cuando todos los modelos fallan"""
+        fallback_responses = [
+            "Actualmente nuestros sistemas de IA están experimentando alta demanda. ",
+            "Para brindarte la mejor atención inmediata, por favor escribe **'quiero contacto'** ",
+            "y un especialista humano te atenderá personalmente en menos de 24 horas. 📞",
+            "",
+            "Mientras tanto, puedo informarte que:",
+            "• ESET PROTECT Elite ofrece protección completa para empresas",
+            "• Tenemos soluciones desde 5 hasta 5000+ usuarios", 
+            "• Todas las licencias incluyen soporte técnico 24/7"
+        ]
+        
+        return "\n".join(fallback_responses)
 # ===========================
 # FUNCIONES GOOGLE SHEETS
 # ===========================
@@ -714,5 +733,6 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
 
 
