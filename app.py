@@ -120,101 +120,63 @@ CONTACT_KEYWORDS = [
 # CLIENTE OPENROUTER
 # ===========================
 
-class OpenRouterClient:
+# REEMPLAZA TU CLASE OpenRouterClient POR ESTO:
+
+class GroqClient:
     def __init__(self, api_key):
         self.api_key = api_key
-        self.base_url = "https://openrouter.ai/api/v1/chat/completions"
+        self.base_url = "https://api.groq.com/openai/v1/chat/completions"
         self.headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-            "HTTP-Referer": "https://asistente-eset.streamlit.app",
-            "X-Title": "Asistente ESET"
+            "Authorization": f"Bearer {api_key}"
         }
         
-        # 🆕 NUEVO: Lista de modelos en cascada
-        self.model_cascade = [
-            "google/gemini-2.0-flash-exp:free",
-            "deepseek/deepseek-chat:free", 
-            "meta-llama/llama-3.1-8b-instruct:free",
-            "huggingfaceh4/zephyr-7b-beta:free",
-            "qwen/qwen-2.5-coder-32b-instruct:free",
-            "google/gemma-2-9b-it:free"
+        self.models = [
+            "llama3-8b-8192",      # Principal - más rápido
+            "llama3-70b-8192",     # Secundario - más inteligente
+            "mixtral-8x7b-32768",  # Terciario - mejor contexto
         ]
-        self.current_model_index = 0
-        self.model_success_count = {model: 0 for model in self.model_cascade}
 
     def generate_content(self, prompt):
-        """Intenta con cada modelo en cascada hasta encontrar uno que funcione"""
-        
-        for i, model in enumerate(self.model_cascade[self.current_model_index:], self.current_model_index):
+        """Usa Groq - mucho más confiable"""
+        for model in self.models:
             try:
-                st.sidebar.info(f"🔄 Probando modelo: {model.split('/')[-1]}")
-                
                 payload = {
                     "model": model,
                     "messages": [{"role": "user", "content": prompt}],
                     "temperature": 0.7,
-                    "max_tokens": MAX_TOKENS
+                    "max_tokens": MAX_TOKENS,
+                    "stream": False
                 }
                 
                 response = requests.post(
-                    self.base_url, 
-                    headers=self.headers, 
-                    json=payload, 
-                    timeout=45
+                    self.base_url,
+                    headers=self.headers,
+                    json=payload,
+                    timeout=10
                 )
                 
                 if response.status_code == 200:
                     result = response.json()
-                    respuesta_final = result["choices"][0]["message"]["content"]
-                    
-                    # ✅ ÉXITO: Actualizar estadísticas y modelo preferido
-                    self.model_success_count[model] += 1
-                    self.current_model_index = i  # Usar este modelo como principal por ahora
+                    respuesta = result["choices"][0]["message"]["content"]
                     
                     # Guardar métricas
-                    uso = calcular_tokens_y_costo(prompt, respuesta_final, model)
+                    uso = calcular_tokens_y_costo(prompt, respuesta, model)
                     if "uso_tokens" not in st.session_state:
                         st.session_state.uso_tokens = []
                     st.session_state.uso_tokens.append(uso)
                     
-                    st.sidebar.success(f"✅ Modelo exitoso: {model.split('/')[-1]}")
-                    return respuesta_final
+                    st.sidebar.success(f"✅ Groq: {model}")
+                    return respuesta
                     
-                elif response.status_code == 429:
-                    st.sidebar.warning(f"⏳ Límite en: {model.split('/')[-1]}, probando siguiente...")
-                    continue  # Pasar al siguiente modelo
-                    
-                else:
-                    st.sidebar.warning(f"⚠️ Error {response.status_code} en {model.split('/')[-1]}")
-                    continue
-                    
-            except requests.exceptions.Timeout:
-                st.sidebar.warning(f"⏰ Timeout en {model.split('/')[-1]}, probando siguiente...")
-                continue
-                
             except Exception as e:
-                st.sidebar.warning(f"❌ Error en {model.split('/')[-1]}: {str(e)[:50]}...")
+                st.sidebar.warning(f"⚠️ Falló {model}, probando siguiente...")
                 continue
         
-        # 🔴 SI TODOS LOS MODELOS FALLAN
-        st.sidebar.error("🚨 Todos los modelos fallaron")
-        return self._get_fallback_response(prompt)
+        return self._get_fallback_response()
 
-    def _get_fallback_response(self, prompt):
-        """Respuesta de emergencia cuando todos los modelos fallan"""
-        fallback_responses = [
-            "Actualmente nuestros sistemas de IA están experimentando alta demanda. ",
-            "Para brindarte la mejor atención inmediata, por favor escribe **'quiero contacto'** ",
-            "y un especialista humano te atenderá personalmente en menos de 24 horas. 📞",
-            "",
-            "Mientras tanto, puedo informarte que:",
-            "• ESET PROTECT Elite ofrece protección completa para empresas",
-            "• Tenemos soluciones desde 5 hasta 5000+ usuarios", 
-            "• Todas las licencias incluyen soporte técnico 24/7"
-        ]
-        
-        return "\n".join(fallback_responses)
+    def _get_fallback_response(self):
+        return "¡Nuestros sistemas están optimizándose! 📞 Para atención inmediata, escribe 'quiero contacto' y un especialista te llamará en minutos."
 # ===========================
 # FUNCIONES GOOGLE SHEETS
 # ===========================
@@ -733,6 +695,7 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
 
 
 
