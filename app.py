@@ -417,7 +417,7 @@ def main():
     st.markdown("---")
     
     # Sidebar con información para el cliente Y debug
-    with st.sidebar:
+with st.sidebar:
     st.header("💬 Chat ESET")
     st.markdown("""
     **¿En qué puedo ayudarte?**
@@ -621,6 +621,7 @@ if st.session_state.get('show_admin', False):
 
 if __name__ == "__main__":
     main()
+
 
 
 
