@@ -4,7 +4,7 @@ import json
 import os
 import re
 from PyPDF2 import PdfReader
-from sentence_transformers import SentenceTransformer
+import google.generativeai as genai
 import chromadb
 from chromadb.config import Settings
 import numpy as np
@@ -73,8 +73,8 @@ def mostrar_dashboard_admin():
     
     # Configuración
     st.subheader("⚙️ Configuración Actual")
-    st.info(f"**Modelo:** google/gemini-2.0-flash-exp:free")
-    st.info(f"**Límite tokens/respuesta:** {MAX_TOKENS}")  # 👈 USAR VARIABLE
+    st.info(f"**Modelo:** Gemini Flash 1.5")
+    st.info(f"**Límite tokens/respuesta:** {MAX_TOKENS}")
     st.info(f"**PDFs cargados:** {len(PDF_FILES)}")
     
     # Botón para limpiar datos
@@ -117,72 +117,56 @@ CONTACT_KEYWORDS = [
 ]
 
 # ===========================
-# CLIENTE OPENROUTER
+# CLIENTE GEMINI
 # ===========================
 
-class OpenRouterClient:
+class GeminiClient:
     def __init__(self, api_key):
         self.api_key = api_key
-        self.base_url = "https://openrouter.ai/api/v1/chat/completions"
-        self.headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-            "HTTP-Referer": "https://asistente-eset.streamlit.app",
-            "X-Title": "Asistente ESET"
-        }
+        self.model_name = "gemini-1.5-flash"
+        self.configure_client()
+        
+    def configure_client(self):
+        """Configurar el cliente de Gemini"""
+        try:
+            genai.configure(api_key=self.api_key)
+            self.model = genai.GenerativeModel(self.model_name)
+            st.sidebar.success("✅ Gemini configurado correctamente")
+        except Exception as e:
+            st.sidebar.error(f"❌ Error configurando Gemini: {e}")
+            self.model = None
 
     def generate_content(self, prompt):
-        """Generar contenido usando OpenRouter API"""
+        """Generar contenido usando Gemini API"""
         try:
-            payload = {
-                "model": "google/gemini-2.0-flash-exp:free",
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                "temperature": 0.7,
-                "max_tokens": MAX_TOKENS  # 👈 USAR VARIABLE GLOBAL
-            }
+            if not self.model:
+                return "Lo siento, hay un problema con la configuración del modelo."
             
-            response = requests.post(
-                self.base_url, 
-                headers=self.headers, 
-                json=payload,
-                timeout=60
+            response = self.model.generate_content(
+                prompt,
+                generation_config=genai.types.GenerationConfig(
+                    max_output_tokens=MAX_TOKENS,
+                    temperature=0.7
+                )
             )
             
-            if response.status_code == 200:
-                result = response.json()
-                respuesta_final = result["choices"][0]["message"]["content"]
-                
-                # 👇 GUARDAR TOKENS USADOS
-                uso = calcular_tokens_y_costo(prompt, respuesta_final, payload["model"])
-                
-                # Inicializar si no existe
-                if "uso_tokens" not in st.session_state:
-                    st.session_state.uso_tokens = []
-                
-                # Guardar en session state
-                st.session_state.uso_tokens.append(uso)
-                
-                return respuesta_final
-            else:
-                error_msg = f"❌ Error OpenRouter: {response.status_code}"
-                if response.status_code == 402:
-                    error_msg += " - Límite alcanzado"
-                elif response.status_code == 429:
-                    error_msg += " - Demasiadas solicitudes"
-                st.sidebar.error(error_msg)
-                return "Lo siento, hubo un error temporal. Por favor, intenta nuevamente en un momento."
-                
-        except requests.exceptions.Timeout:
-            st.sidebar.error("❌ Timeout en OpenRouter")
-            return "El servicio está respondiendo lentamente. Por favor, intenta nuevamente."
+            respuesta_final = response.text
+            
+            # 👇 GUARDAR TOKENS USADOS
+            uso = calcular_tokens_y_costo(prompt, respuesta_final, self.model_name)
+            
+            # Inicializar si no existe
+            if "uso_tokens" not in st.session_state:
+                st.session_state.uso_tokens = []
+            
+            # Guardar en session state
+            st.session_state.uso_tokens.append(uso)
+            
+            return respuesta_final
+            
         except Exception as e:
-            st.sidebar.error(f"❌ Excepción OpenRouter: {e}")
-            return "En este momento tengo dificultades técnicas. Por favor, intenta nuevamente o escribe 'quiero contacto' para hablar con un especialista."
+            st.sidebar.error(f"❌ Error Gemini: {e}")
+            return "Lo siento, hubo un error temporal. Por favor, intenta nuevamente en un momento."
 
 # ===========================
 # FUNCIONES GOOGLE SHEETS
@@ -255,8 +239,10 @@ def guardar_lead_sheets(form_data):
         return False
 
 # ===========================
-# FUNCIONES DE MODELO CON DEBUG
+# FUNCIONES DE EMBEDDINGS Y BASE DE DATOS
 # ===========================
+
+from sentence_transformers import SentenceTransformer
 
 @st.cache_resource
 def load_embedding_model():
@@ -264,15 +250,14 @@ def load_embedding_model():
     return SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
 @st.cache_resource
-def load_openrouter_model():
-    """Cargar cliente de OpenRouter"""
+def load_gemini_model():
+    """Cargar cliente de Gemini"""
     try:
-        api_key = st.secrets["OPENROUTER_API_KEY"]
-        client = OpenRouterClient(api_key)
-        st.sidebar.success("✅ OpenRouter configurado")
+        api_key = st.secrets["GEMINI_API_KEY"]
+        client = GeminiClient(api_key)
         return client
     except Exception as e:
-        st.sidebar.error(f"❌ Error configurando OpenRouter: {e}")
+        st.sidebar.error(f"❌ Error configurando Gemini: {e}")
         return None
 
 @st.cache_resource
@@ -299,7 +284,7 @@ def extract_contact_intent(message):
 def generar_resumen_interes(historial_conversacion, interes_seleccionado):
     """Generar un resumen de lo que el cliente está interesado en comprar"""
     try:
-        model = load_openrouter_model()
+        model = load_gemini_model()
         if not model:
             return f"Cliente interesado en {interes_seleccionado}. Conversación: {historial_conversacion[-500:]}"
         
@@ -329,7 +314,7 @@ def generar_resumen_interes(historial_conversacion, interes_seleccionado):
         return f"Cliente interesado en {interes_seleccionado}. Conversación: {historial_conversacion[-500:]}"
 
 # ===========================
-# FUNCIONES PDF CON DEBUG
+# FUNCIONES PDF
 # ===========================
 
 def get_pdf_from_local(filename):
@@ -386,7 +371,7 @@ def search_similar_documents(query, top_k=5):
 
 def generate_contextual_response(query, context_documents):
     try:
-        model = load_openrouter_model()
+        model = load_gemini_model()
         if not model:
             return f"Como especialista en ESET, puedo ayudarte con información sobre nuestros productos de ciberseguridad. Para tu pregunta sobre '{query}', te recomiendo contactar con nuestro equipo de ventas."
         
@@ -528,7 +513,7 @@ def main():
             if st.button("📊 Panel de Control Admin"):
                 st.session_state.show_admin = True
 
-    # Inicializar base de conocimiento CON DEBUG
+    # Inicializar base de conocimiento
     knowledge_loaded = initialize_knowledge_base()
     
     # Inicializar session state
