@@ -479,6 +479,38 @@ def initialize_knowledge_base():
         st.sidebar.error("❌ No se pudo crear la base de conocimiento")
         return False
 
+def detect_product_intent(message):
+    """Detectar si el usuario pregunta específicamente por productos o qué venden"""
+    message_lower = message.lower()
+    
+    product_keywords = [
+        'que venden', 'qué venden', 'vendes', 'venden', 'productos',
+        'lista de productos', 'qué productos', 'que productos', 
+        'soluciones', 'qué ofrecen', 'que ofrecen', 'ofertas',
+        'catalogo', 'catálogo', 'portfolio', 'portafolio'
+    ]
+    
+    return any(keyword in message_lower for keyword in product_keywords)
+
+def get_standard_product_response():
+    """Respuesta estándar y estructurada sobre productos ESET"""
+    return """¡Hola! En CICE, bajo el liderazgo de Cristian Sánchez y con Enzo Mórtola como HEAD OF SALES, ofrecemos soluciones integrales de seguridad informática ESET diseñadas para proteger tanto a empresas como a usuarios individuales.
+
+**🏢 Para Empresas:**
+• **ESET PROTECT Elite** - Protección avanzada con detección y respuesta
+• **ESET PROTECT Enterprise** - Seguridad corporativa completa  
+• **ESET PROTECT Advanced** - Protección mejorada
+• **ESET PROTECT Entry** - Protección básica esencial
+• **ESET Detection and Response Advanced** - Detección y respuesta ante incidentes
+• **ESET Premium Support Essential** - Soporte técnico prioritario
+
+**👨‍💻 Para Usuarios Finales:**
+• **ESET PROTECT Complete** - Suite integral de ciberseguridad
+• **ESET PROTECT Advanced** - Protección avanzada personal
+• **ESET PROTECT Entry** - Protección básica
+
+¿Te interesa alguna solución en particular o prefieres que un especialista te contacte para una asesoría personalizada? Puedes escribir **'quiero contacto'** para conectarte con nuestro equipo. 🚀"""
+
 def main():
     query_params = st.experimental_get_query_params()
     if "admin" in query_params and query_params["admin"][0] == "eset2024":
@@ -620,9 +652,10 @@ Un especialista de ESET te contactará en las próximas 24 horas para:
             with st.chat_message("user"):
                 st.markdown(prompt)
             
-            # NUEVA LÓGICA DE DETECCIÓN DE INTENCIÓN
+            # NUEVA LÓGICA DE DETECCIÓN DE INTENCIÓN MEJORADA
             intent = extract_contact_intent(prompt)
-            
+            product_intent = detect_product_intent(prompt)
+
             if intent["direct_contact"]:
                 # CONTACTO DIRECTO = Mostrar formulario inmediatamente
                 contact_response = """¡Excelente! Veo que estás interesado en contactarnos. 
@@ -645,7 +678,16 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
                 
                 st.session_state.awaiting_form = True
                 st.rerun()
-            
+
+            elif product_intent:
+                # PREGUNTA SOBRE PRODUCTOS = Respuesta directa y estructurada
+                product_response = get_standard_product_response()
+                
+                st.session_state.messages.append({"role": "assistant", "content": product_response})
+                
+                with st.chat_message("assistant"):
+                    st.markdown(product_response)
+
             else:
                 # BÚSQUEDA NORMAL con o sin sugerencia
                 with st.chat_message("assistant"):
@@ -659,7 +701,6 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
                                 response_with_suggestion = f"""{response}
 
 ---
-
 💡 **¿Te gustaría recibir información más personalizada?** 
 Puedes escribir **"quiero contacto"** para que un especialista te ayude con:
 • Cotización adaptada a tu empresa
