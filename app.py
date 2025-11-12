@@ -123,7 +123,7 @@ CONTACT_KEYWORDS = [
 class GeminiClient:
     def __init__(self, api_key):
         self.api_key = api_key
-        self.model_name = "gemini-1.5-flash"
+        self.model_name = "gemini-2.0-flash"
         self.configure_client()
         
     def configure_client(self):
@@ -687,3 +687,4 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
