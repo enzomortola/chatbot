@@ -14,6 +14,7 @@ from pathlib import Path
 import io
 import gspread
 from google.oauth2.service_account import Credentials
+import google.generativeai as genai  # 👈 NUEVA IMPORTACIÓN
 
 ADMIN_PASSWORD = "eset_admin_ciceEnzo"
 MAX_TOKENS = 500  # 👈 VARIABLE GLOBAL PARA TOKENS
@@ -73,8 +74,8 @@ def mostrar_dashboard_admin():
     
     # Configuración
     st.subheader("⚙️ Configuración Actual")
-    st.info(f"**Modelo:** google/gemini-2.0-flash-exp:free")
-    st.info(f"**Límite tokens/respuesta:** {MAX_TOKENS}")  # 👈 USAR VARIABLE
+    st.info(f"**Modelo:** Gemini 1.5 Flash (Modo Pago)")  # 👈 ACTUALIZADO
+    st.info(f"**Límite tokens/respuesta:** {MAX_TOKENS}")
     st.info(f"**PDFs cargados:** {len(PDF_FILES)}")
     
     # Botón para limpiar datos
@@ -117,66 +118,69 @@ CONTACT_KEYWORDS = [
 ]
 
 # ===========================
-# CLIENTE OPENROUTER
+# CLIENTE GEMINI PRO (PAGO)
 # ===========================
 
-# REEMPLAZA TU CLASE OpenRouterClient POR ESTO:
-
-class GroqClient:
+class GeminiClient:
     def __init__(self, api_key):
         self.api_key = api_key
-        self.base_url = "https://api.groq.com/openai/v1/chat/completions"
-        self.headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}"
-        }
+        genai.configure(api_key=api_key)
         
-        self.models = [
-            "llama3-8b-8192",      # Principal - más rápido
-            "llama3-70b-8192",     # Secundario - más inteligente
-            "mixtral-8x7b-32768",  # Terciario - mejor contexto
-        ]
+        # Configurar el modelo
+        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.chat = None  # Para mantener conversación
+        
+        st.sidebar.success("✅ Gemini Pro configurado")
 
     def generate_content(self, prompt):
-        """Usa Groq - mucho más confiable"""
-        for model in self.models:
-            try:
-                payload = {
-                    "model": model,
-                    "messages": [{"role": "user", "content": prompt}],
-                    "temperature": 0.7,
-                    "max_tokens": MAX_TOKENS,
-                    "stream": False
-                }
-                
-                response = requests.post(
-                    self.base_url,
-                    headers=self.headers,
-                    json=payload,
-                    timeout=10
+        """Generar contenido usando Gemini Pro API"""
+        try:
+            # Iniciar nueva conversación o continuar existente
+            if self.chat is None:
+                self.chat = self.model.start_chat(history=[])
+            
+            # Enviar mensaje
+            response = self.chat.send_message(
+                prompt,
+                generation_config=genai.types.GenerationConfig(
+                    max_output_tokens=MAX_TOKENS,
+                    temperature=0.7
                 )
-                
-                if response.status_code == 200:
-                    result = response.json()
-                    respuesta = result["choices"][0]["message"]["content"]
-                    
-                    # Guardar métricas
-                    uso = calcular_tokens_y_costo(prompt, respuesta, model)
-                    if "uso_tokens" not in st.session_state:
-                        st.session_state.uso_tokens = []
-                    st.session_state.uso_tokens.append(uso)
-                    
-                    st.sidebar.success(f"✅ Groq: {model}")
-                    return respuesta
-                    
-            except Exception as e:
-                st.sidebar.warning(f"⚠️ Falló {model}, probando siguiente...")
-                continue
-        
-        return self._get_fallback_response()
+            )
+            
+            respuesta_final = response.text
+            
+            # Guardar métricas
+            uso = calcular_tokens_y_costo(prompt, respuesta_final, "gemini-1.5-flash")
+            if "uso_tokens" not in st.session_state:
+                st.session_state.uso_tokens = []
+            st.session_state.uso_tokens.append(uso)
+            
+            st.sidebar.success("✅ Gemini Pro - Respuesta generada")
+            return respuesta_final
+            
+        except Exception as e:
+            st.sidebar.error(f"❌ Error Gemini: {e}")
+            return self._get_fallback_response()
 
     def _get_fallback_response(self):
-        return "¡Nuestros sistemas están optimizándose! 📞 Para atención inmediata, escribe 'quiero contacto' y un especialista te llamará en minutos."
+        """Respuesta de emergencia profesional"""
+        return """¡Perfecto! Veo que tienes interés en nuestros productos de ciberseguridad.
+
+Como especialista en ESET, te puedo informar que ofrecemos:
+
+🔒 **ESET PROTECT Elite** - Protección avanzada con detección y respuesta
+🛡️ **ESET PROTECT Enterprise** - Seguridad corporativa completa  
+🔐 **ESET PROTECT Complete** - Suite integral de ciberseguridad
+
+Para ofrecerte la mejor solución adaptada a tus necesidades, te recomiendo:
+
+📞 **Contactar con nuestro equipo** escribiendo '**quiero contacto**'
+🎯 **Recibir una demostración personalizada** 
+💼 **Obtener una cotización específica**
+
+¿Te interesa que un especialista te contacte?"""
+
 # ===========================
 # FUNCIONES GOOGLE SHEETS
 # ===========================
@@ -258,15 +262,15 @@ def load_embedding_model():
 
 @st.cache_resource
 def load_openrouter_model():
+    """Cargar cliente de Gemini Pro"""
     try:
-        api_key = st.secrets["GROQ_API_KEY"]  # 👈 CAMBIAR
-        client = GroqClient(api_key)           # 👈 NUEVA CLASE
-        st.sidebar.success("✅ Groq configurado")
+        api_key = st.secrets["GEMINI_API_KEY"]  # 👈 NUEVA SECRET
+        client = GeminiClient(api_key)
+        st.sidebar.success("✅ Gemini Pro configurado - Modo Pago")
         return client
-    except:
-        # Fallback a OpenRouter si Groq falla
-        api_key = st.secrets["OPENROUTER_API_KEY"]
-        return OpenRouterClient(api_key)
+    except Exception as e:
+        st.sidebar.error(f"❌ Error configurando Gemini: {e}")
+        return None
 
 @st.cache_resource
 def init_chroma_db():
@@ -695,8 +699,3 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
