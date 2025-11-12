@@ -133,92 +133,6 @@ INTEREST_KEYWORDS = [
     'empresa', 'empresarial', 'corporativo'
 ]
 
-# PALABRAS CLAVE PARA SUGERIR CONTACTO (interés general)
-INTEREST_KEYWORDS = [
-    # Contacto directo
-    'contacto', 'contactar', 'contactarme', 'contactenos', 'contactémonos', 
-    'comuniquese', 'comuníquese', 'comuniquémonos', 'comunicarse',
-    
-    # Llamadas
-    'llamar', 'llámenme', 'llamenme', 'llámame', 'llamame', 'telefonear', 
-    'llamada', 'llámeme', 'llameme', 'hablar por teléfono', 'telefono',
-    
-    # Escritura/email
-    'escribir', 'escribanme', 'escríbanme', 'escribame', 'escríbame',
-    'email', 'correo', 'mail', 'e-mail', 'escribirme', 'envíen mail',
-    
-    # Datos personales
-    'dejar mis datos', 'mis datos', 'tomar mis datos', 'registrar mis datos',
-    'datos de contacto', 'información de contacto', 'datos personales',
-    'compartir mis datos', 'proporcionar datos', 'dar mis datos',
-    
-    # Solicitud de contacto
-    'quiero que me contacten', 'deseo que me contacten', 'necesito que me contacten',
-    'que me contacten', 'me pueden contactar', 'pueden contactarme',
-    'agenden contacto', 'solicito contacto', 'requiero contacto',
-    
-    # Ejecutivos/asesores
-    'ejecutivo', 'ejecutiva', 'asesor', 'asesora', 'vendedor', 'vendedora',
-    'especialista', 'consultor', 'consultora', 'agente', 'representante',
-    'hablar con un ejecutivo', 'hablar con ejecutivo', 'hablar con asesor',
-    'un asesor me contacte', 'un ejecutivo me llame', 'persona encargada',
-    
-    # Reuniones
-    'reunión', 'reunion', 'reunirme', 'agendar reunión', 'agendar reunion',
-    'coordinar reunión', 'coordinar reunion', 'programar reunión',
-    'cita', 'agendar cita', 'coordinar cita', 'meeting', 'videollamada',
-    'llamada programada', 'encuentro', 'demostración', 'demo',
-    
-    # Cotizaciones y precios
-    'cotización', 'cotizacion', 'cotizar', 'presupuesto', 'presupuestar',
-    'precio', 'precios', 'costo', 'costos', 'valor', 'tarifa', 'tarifas',
-    'cuánto cuesta', 'cuanto cuesta', 'precio de', 'costo de', 'valor de',
-    'cotización personalizada', 'presupuesto personalizado',
-    
-    # Compra/venta
-    'comprar', 'adquirir', 'contratar', 'suscripción', 'suscripcion',
-    'licencia', 'licencias', 'producto', 'servicio', 'solución',
-    'quiero comprar', 'deseo comprar', 'necesito comprar', 'me interesa comprar',
-    'adquirir el producto', 'contratar el servicio', 'tomar la licencia',
-    
-    # Interés general
-    'me interesa', 'estoy interesado', 'estoy interesada', 'interesado',
-    'interesada', 'tengo interés', 'tengo interes', 'me llama la atención',
-    'quiero saber más', 'deseo información', 'necesito información',
-    'más información', 'mas informacion', 'info', 'información adicional',
-    
-    # Consultas específicas
-    'planes', 'ofertas', 'promociones', 'descuentos', 'beneficios',
-    'características', 'funcionalidades', 'especificaciones',
-    'implementación', 'instalación', 'configuración', 'soporte',
-    
-    # Empresa/organización
-    'empresa', 'organización', 'organizacion', 'negocio', 'pyme',
-    'empresarial', 'corporativo', 'corporativa', 'institucional',
-    
-    # Tiempo/urgencia
-    'cuanto antes', 'lo antes posible', 'urgente', 'inmediato',
-    'pronto', 'rápido', 'rapido', 'ahora', 'hoy',
-    
-    # Variantes con typos comunes
-    'kontacto', 'kontactar', 'kontactarme', 'kontactenos',
-    'llamenme', 'escribanme', 'llameme', 'asesor', 'reunion',
-    'cotizacion', 'presupuesto', 'interes', 'informacion',
-    
-    # Frases completas comunes
-    'me gustaría que me contacten', 'quisiera que me llamen',
-    'necesito hablar con alguien', 'busco asesoramiento',
-    'quiero dejar mis datos para', 'deseo que me cotizen',
-    'me pueden asesorar', 'necesito una cotización',
-    'estoy buscando precios', 'quiero información sobre precios',
-    'me interesa el producto', 'deseo adquirir el servicio',
-    
-    # Variantes con mayúsculas (por si acaso)
-    'CONTACTO', 'LLAMENME', 'ESCRIBANME', 'COTIZACIÓN', 'PRESUPUESTO'
-]
-
-]
-
 class GeminiClient:
     def __init__(self, api_key):
         self.api_key = api_key
@@ -706,10 +620,12 @@ Un especialista de ESET te contactará en las próximas 24 horas para:
             with st.chat_message("user"):
                 st.markdown(prompt)
             
-            is_contact_intent = extract_contact_intent(prompt)
+            # NUEVA LÓGICA DE DETECCIÓN DE INTENCIÓN
+            intent = extract_contact_intent(prompt)
             
-            if is_contact_intent:
-                contact_response = """¡Excelente! Veo que estás interesado en nuestros productos de ESET. 
+            if intent["direct_contact"]:
+                # CONTACTO DIRECTO = Mostrar formulario inmediatamente
+                contact_response = """¡Excelente! Veo que estás interesado en contactarnos. 
 
 Para ofrecerte la mejor atención personalizada y una cotización adaptada a tus necesidades, me gustaría contar con algunos datos.
 
@@ -731,17 +647,32 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
                 st.rerun()
             
             else:
+                # BÚSQUEDA NORMAL con o sin sugerencia
                 with st.chat_message("assistant"):
                     with st.spinner("Buscando información..."):
                         try:
                             relevant_docs = search_similar_documents(prompt, top_k=5)
                             response = generate_contextual_response(prompt, relevant_docs)
-                            st.markdown(response)
-                            st.session_state.messages.append({"role": "assistant", "content": response})
                             
-                            if any(word in prompt.lower() for word in ['precio', 'costo', 'cotiz', 'compra', 'licencia', 'demo']):
-                                st.info("💡 **¿Te interesa una cotización personalizada?** Escribe 'quiero dejar mis datos' y te ayudo con el proceso.")
-                        
+                            # AGREGAR SUGERENCIA SI HAY INTERÉS GENERAL
+                            if intent["general_interest"]:
+                                response_with_suggestion = f"""{response}
+
+---
+
+💡 **¿Te gustaría recibir información más personalizada?** 
+Puedes escribir **"quiero contacto"** para que un especialista te ayude con:
+• Cotización adaptada a tu empresa
+• Demostración personalizada
+• Análisis de necesidades específicas"""
+                                
+                                st.markdown(response_with_suggestion)
+                                st.session_state.messages.append({"role": "assistant", "content": response_with_suggestion})
+                            else:
+                                # RESPUESTA NORMAL SIN SUGERENCIA
+                                st.markdown(response)
+                                st.session_state.messages.append({"role": "assistant", "content": response})
+                            
                         except Exception as e:
                             error_msg = f"En este momento tengo dificultades técnicas. Para tu pregunta sobre '{prompt}', te recomiendo escribir 'quiero contacto' para que un especialista te atienda personalmente."
                             st.markdown(error_msg)
@@ -752,5 +683,3 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
-
-
