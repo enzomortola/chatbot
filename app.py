@@ -130,6 +130,18 @@ class OpenRouterClient:
             "HTTP-Referer": "https://asistente-eset.streamlit.app",
             "X-Title": "Asistente ESET"
         }
+        
+        # 🆕 NUEVO: Lista de modelos en cascada
+        self.model_cascade = [
+            "google/gemini-2.0-flash-exp:free",
+            "deepseek/deepseek-chat:free", 
+            "meta-llama/llama-3.1-8b-instruct:free",
+            "huggingfaceh4/zephyr-7b-beta:free",
+            "qwen/qwen-2.5-coder-32b-instruct:free",
+            "google/gemma-2-9b-it:free"
+        ]
+        self.current_model_index = 0
+        self.model_success_count = {model: 0 for model in self.model_cascade}
 
     def generate_content(self, prompt):
         """Generar contenido usando OpenRouter API"""
@@ -702,4 +714,5 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
 
