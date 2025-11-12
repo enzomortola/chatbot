@@ -96,7 +96,45 @@ PDF_FILES = [
     "The Psychology of Selling - Increase Your Sales Faster and -- Brian Tracy -- ( WeLib.org ).pdf"
 ]
 
+# PALABRAS CLAVE PARA DETECTAR INTERÉS EN CONTACTO (más específicas)
 CONTACT_KEYWORDS = [
+    # Contacto directo
+    'contacto', 'contactar', 'contactarme', 'contactenos',
+    
+    # Llamadas
+    'llamar', 'llámenme', 'llamenme', 'llámame', 'telefono',
+    
+    # Datos personales  
+    'dejar mis datos', 'mis datos', 'datos de contacto',
+    
+    # Solicitud explícita
+    'quiero que me contacten', 'deseo que me contacten', 'que me contacten',
+    
+    # Ejecutivos/asesores
+    'ejecutivo', 'asesor', 'vendedor', 'hablar con un ejecutivo',
+    
+    # Reuniones
+    'reunión', 'agendar reunión', 'cita', 'demostración', 'demo',
+    
+    # Cotizaciones
+    'cotización', 'presupuesto', 'cotizar', 'presupuestar',
+    
+    # Compra directa
+    'comprar', 'quiero comprar', 'adquirir', 'contratar', 'licencia',
+]
+
+# PALABRAS CLAVE PARA SUGERIR CONTACTO (interés general)
+INTEREST_KEYWORDS = [
+    'me interesa', 'estoy interesado', 'estoy interesada', 
+    'quiero saber más', 'más información', 'info',
+    'precio', 'costo', 'valor', 'tarifa',
+    'planes', 'ofertas', 'promociones',
+    'características', 'funcionalidades',
+    'empresa', 'empresarial', 'corporativo'
+]
+
+# PALABRAS CLAVE PARA SUGERIR CONTACTO (interés general)
+INTEREST_KEYWORDS = [
     # Contacto directo
     'contacto', 'contactar', 'contactarme', 'contactenos', 'contactémonos', 
     'comuniquese', 'comuníquese', 'comuniquémonos', 'comunicarse',
@@ -177,6 +215,8 @@ CONTACT_KEYWORDS = [
     
     # Variantes con mayúsculas (por si acaso)
     'CONTACTO', 'LLAMENME', 'ESCRIBANME', 'COTIZACIÓN', 'PRESUPUESTO'
+]
+
 ]
 
 class GeminiClient:
@@ -334,8 +374,19 @@ def init_chroma_db():
     return client, collection
 
 def extract_contact_intent(message):
+    """Detectar si el usuario quiere dejar datos de contacto"""
     message_lower = message.lower()
-    return any(keyword in message_lower for keyword in CONTACT_KEYWORDS)
+    
+    # CONTACTO DIRECTO = Mostrar formulario inmediatamente
+    direct_contact = any(keyword in message_lower for keyword in CONTACT_KEYWORDS)
+    
+    # INTERÉS GENERAL = Sugerir contacto amablemente
+    general_interest = any(keyword in message_lower for keyword in INTEREST_KEYWORDS)
+    
+    return {
+        "direct_contact": direct_contact,
+        "general_interest": general_interest
+    }
 
 def generar_resumen_interes(historial_conversacion, interes_seleccionado):
     try:
@@ -701,4 +752,5 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
 
