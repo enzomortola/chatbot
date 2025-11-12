@@ -302,7 +302,7 @@ def get_leads_sheet(client, sheet_name="leads_eset"):
         return None
 
 def guardar_lead_sheets(form_data):
-    """Guardar lead en Google Sheets"""
+    """Guardar lead en Google Sheets - VERSIÓN CON CAMPOS OPCIONALES"""
     try:
         client = setup_google_sheets()
         if not client:
@@ -312,15 +312,16 @@ def guardar_lead_sheets(form_data):
         if not sheet:
             return False
         
+        # Asegurar que todos los campos tengan valor
         row = [
             form_data['timestamp'],
-            form_data['nombre'],
-            form_data['email'],
+            form_data['nombre'] or "No especificado",
+            form_data['email'] or "No especificado", 
             form_data['telefono'],
-            form_data['empresa'],
-            form_data['interes'],
-            form_data['consulta_original'],
-            form_data['resumen_interes']
+            form_data['empresa'] or "No especificado",
+            form_data['interes'] or "No especificado",
+            form_data['consulta_original'] or "No especificada",
+            form_data['resumen_interes'] or "No especificado"
         ]
         
         sheet.append_row(row)
@@ -663,25 +664,26 @@ def main():
     # MOSTRAR FORMULARIO SI ESTÁ ACTIVO
     if st.session_state.awaiting_form:
         st.markdown("---")
-        st.subheader("📝 Formulario de Contacto")
-        st.info("👇 Completa tus datos y un especialista te contactará en menos de 24 horas")
+        st.subheader("📝 Formulario de Contacto Rápido")
+        st.info("👇 **Solo tu teléfono es necesario** - Te contactaremos en menos de 24 horas")
         
         with st.form(key="contact_form_main", clear_on_submit=True):
             col1, col2 = st.columns(2)
             
             with col1:
-                nombre = st.text_input("Nombre completo*", placeholder="Ej: Juan Pérez")
-                email = st.text_input("Email*", placeholder="juan@empresa.com")
-                telefono = st.text_input("Teléfono*", placeholder="+54 11 1234-5678")
+                telefono = st.text_input("Teléfono*", placeholder="+54 11 1234-5678", key="telefono_contacto")
+                nombre = st.text_input("Nombre (opcional)", placeholder="Ej: Juan Pérez", key="nombre_contacto")
+                email = st.text_input("Email (opcional)", placeholder="juan@empresa.com", key="email_contacto")
             
             with col2:
-                empresa = st.text_input("Empresa", placeholder="Nombre de tu empresa")
+                empresa = st.text_input("Empresa (opcional)", placeholder="Nombre de tu empresa", key="empresa_contacto")
                 interes = st.selectbox(
-                    "Principal interés*",
-                    ["Selecciona una opción", "ESET PROTECT Elite", "ESET PROTECT Enterprise", 
+                    "Principal interés (opcional)",
+                    ["No especificado", "ESET PROTECT Elite", "ESET PROTECT Enterprise", 
                      "ESET PROTECT Complete", "ESET PROTECT Advanced", "ESET PROTECT Entry", 
                      "Detección y Respuesta", "Seguridad para Endpoints", "Otro"],
-                    index=0
+                    index=0,
+                    key="interes_contacto"
                 )
             
             # Mostrar resumen de la conversación
@@ -693,7 +695,7 @@ def main():
             
             col_btn1, col_btn2 = st.columns([1, 1])
             with col_btn1:
-                submitted = st.form_submit_button("🚀 Enviar mis datos", use_container_width=True)
+                submitted = st.form_submit_button("📞 ¡Que me llamen!", use_container_width=True)
             with col_btn2:
                 cancelled = st.form_submit_button("❌ Cancelar", use_container_width=True)
             
@@ -702,21 +704,17 @@ def main():
                 st.rerun()
             
             if submitted:
-                # Validaciones
-                if not nombre or not email or not telefono:
-                    st.error("❌ Por favor completa todos los campos obligatorios (*)")
-                elif interes == "Selecciona una opción":
-                    st.error("❌ Por favor selecciona tu interés principal")
-                elif "@" not in email or "." not in email:
-                    st.error("❌ Por favor ingresa un email válido")
+                # Validación SOLO del teléfono
+                if not telefono or not telefono.strip():
+                    st.error("❌ Por favor ingresa tu teléfono para que podamos contactarte")
                 else:
-                    # Preparar datos
+                    # Preparar datos (campos opcionales pueden estar vacíos)
                     form_data = {
                         'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        'nombre': nombre.strip(),
-                        'email': email.strip().lower(),
+                        'nombre': nombre.strip() if nombre else "No especificado",
+                        'email': email.strip().lower() if email else "No especificado",
                         'telefono': telefono.strip(),
-                        'empresa': empresa.strip() if empresa else "No especificada",
+                        'empresa': empresa.strip() if empresa else "No especificado",
                         'interes': interes,
                         'consulta_original': st.session_state.get('last_query', '')[:200],
                         'resumen_interes': resumen_interes
@@ -724,19 +722,30 @@ def main():
                     
                     # Guardar SOLO en Google Sheets
                     if guardar_lead_sheets(form_data):
-                        st.success("✅ ¡Datos enviados correctamente!")
+                        st.success("✅ ¡Perfecto! Hemos recibido tus datos")
                         st.balloons()
                         
-                        # Agregar mensaje de confirmación
-                        confirmation_msg = f"""✅ ¡Perfecto {nombre}! He registrado tus datos de contacto. 
+                        # Mensaje de confirmación más simple
+                        if nombre and nombre.strip():
+                            confirmation_msg = f"""✅ ¡Gracias {nombre.strip()}! 
 
-**Resumen de tu interés:**
-{resumen_interes}
+**Hemos registrado tu solicitud de contacto:**
+📞 **Teléfono:** {telefono}
+{'👤 **Nombre:** ' + nombre if nombre and nombre.strip() else ''}
+{'📧 **Email:** ' + email if email and email.strip() else ''}
+{'🏢 **Empresa:** ' + empresa if empresa and empresa.strip() else ''}
+{'🎯 **Interés:** ' + interes if interes != "No especificado" else ''}
 
-Un especialista de ESET te contactará en las próximas 24 horas para:
-- ✅ Analizar tus necesidades específicas
-- ✅ Proporcionarte una demostración personalizada  
-- ✅ Entregarte una cotización detallada
+Un especialista de ESET te contactará en las próximas 24 horas al número proporcionado.
+
+¡Estamos aquí para ayudarte! 🚀"""
+                        else:
+                            confirmation_msg = f"""✅ ¡Perfecto! 
+
+**Hemos registrado tu solicitud de contacto:**
+📞 **Teléfono:** {telefono}
+
+Un especialista de ESET te contactará en las próximas 24 horas.
 
 ¡Estamos aquí para ayudarte! 🚀"""
                         
@@ -767,19 +776,19 @@ Un especialista de ESET te contactará en las próximas 24 horas para:
             is_contact_intent = extract_contact_intent(prompt)
             
             if is_contact_intent:
-                # Activar formulario
-                contact_response = """¡Excelente! Veo que estás interesado en nuestros productos de ESET. 
+                # Activar formulario SIMPLIFICADO
+                contact_response = """¡Perfecto! Veo que quieres que te contactemos. 
 
-Para ofrecerte la mejor atención personalizada y una cotización adaptada a tus necesidades, me gustaría contar con algunos datos.
+**Solo necesitamos tu teléfono** 📞 para poder llamarte.
 
-**Por favor completa el formulario que aparece a continuación** 👇
+👇 **Completa el formulario rápido** (solo el teléfono es obligatorio)
 
 Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
-- ✅ Analizar tus necesidades específicas
-- ✅ Proporcionarte una demostración personalizada  
-- ✅ Entregarte una cotización detallada
+- ✅ Responder todas tus preguntas
+- ✅ Asesorarte personalmente  
+- ✅ Entregarte una cotización si lo deseas
 
-¡Estamos aquí para ayudarte! 🚀"""
+¡Es rápido y sin compromiso! 🚀"""
                 
                 st.session_state.messages.append({"role": "assistant", "content": contact_response})
                 
@@ -804,7 +813,7 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
                             
                             # Sugerir contacto si es relevante
                             if any(word in prompt.lower() for word in ['precio', 'costo', 'cotiz', 'compra', 'licencia', 'demo']):
-                                st.info("💡 **¿Te interesa una cotización personalizada?** Escribe 'quiero dejar mis datos' y te ayudo con el proceso.")
+                                st.info("💡 **¿Te interesa una cotización personalizada?** Escribe 'quiero contacto' y te llamamos.")
                         
                         except Exception as e:
                             error_msg = f"En este momento tengo dificultades técnicas. Para tu pregunta sobre '{prompt}', te recomiendo escribir 'quiero contacto' para que un especialista te atienda personalmente."
@@ -817,5 +826,6 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
 
 
