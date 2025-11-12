@@ -16,7 +16,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 
 ADMIN_PASSWORD = "eset_admin_ciceEnzo"
-MAX_TOKENS = 200  # 👈 VARIABLE GLOBAL PARA TOKENS
+MAX_TOKENS = 500  # 👈 VARIABLE GLOBAL PARA TOKENS
 
 def calcular_tokens_y_costo(prompt, response, model_used):
     """
@@ -509,7 +509,9 @@ def generate_contextual_response(query, context_documents):
         if context_documents:
             context = "\n".join(context_documents[:2])
             
-            prompt = f"""Eres un vendedor amable de ESET. Responde de forma BREVE pero CALUROSA. Ten en cuenta que quiero consumir POCOS tokens, responde lo que consideres NECESARIO, pero BREVEMENTE.
+            prompt = f"""Eres un vendedor amable de ESET. Responde de forma BREVE pero CALUROSA. Ten en cuenta que quiero consumir POCOS tokens, responde lo que consideres NECESARIO, pero BREVEMENTE. 
+            Si alguien por ejemplo te pregunta sobre opciones disponibles de ventas, no respondas como un bot artificial que pide dejar los datos, la ideea es que resulte orgánico y amigable, en ese caso por ejemplo
+            mostrale las opciones que tenes disponibles y al final podes sugerir algo como "queres dejar tus datos"? etc. La idea es que resulte orgánico el mensaje que provees.
 
 CONTEXTO: {context}
 
@@ -518,7 +520,7 @@ PREGUNTA: {query}
 Reglas:
 - Mantén un tono amigable 😊
 - Ve directo al punto
-- Termina con una pregunta o invitación a dejar los datos de contacto.
+- Termina con una pregunta o invitación.
 
 RESPUESTA BREVE Y AMABLE:"""
         else:
@@ -840,6 +842,7 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
 
 
 
