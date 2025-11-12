@@ -127,7 +127,7 @@ class GeminiClient:
         genai.configure(api_key=api_key)
         
         # Configurar el modelo
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.model = genai.GenerativeModel('gemini-2.0-flash')
         self.chat = None  # Para mantener conversación
         
         st.sidebar.success("✅ Gemini Pro configurado")
@@ -699,3 +699,4 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
