@@ -258,15 +258,15 @@ def load_embedding_model():
 
 @st.cache_resource
 def load_openrouter_model():
-    """Cargar cliente de OpenRouter"""
     try:
-        api_key = st.secrets["OPENROUTER_API_KEY"]
-        client = OpenRouterClient(api_key)
-        st.sidebar.success("✅ OpenRouter configurado")
+        api_key = st.secrets["GROQ_API_KEY"]  # 👈 CAMBIAR
+        client = GroqClient(api_key)           # 👈 NUEVA CLASE
+        st.sidebar.success("✅ Groq configurado")
         return client
-    except Exception as e:
-        st.sidebar.error(f"❌ Error configurando OpenRouter: {e}")
-        return None
+    except:
+        # Fallback a OpenRouter si Groq falla
+        api_key = st.secrets["OPENROUTER_API_KEY"]
+        return OpenRouterClient(api_key)
 
 @st.cache_resource
 def init_chroma_db():
@@ -695,6 +695,7 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
 
 
 
