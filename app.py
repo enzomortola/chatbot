@@ -15,6 +15,55 @@ import io
 import gspread
 from google.oauth2.service_account import Credentials
 
+ADMIN_PASSWORD = "eset_admin_ciceEnzo"  # Agregar esta línea
+
+def mostrar_dashboard_admin():
+    st.title("🔧 Dashboard de Administración - ESET")
+    st.markdown("---")
+    
+    # Métricas de uso
+    if "uso_tokens" in st.session_state and st.session_state.uso_tokens:
+        datos = st.session_state.uso_tokens
+        
+        total_tokens = sum([x['total_tokens'] for x in datos])
+        total_consultas = len(datos)
+        avg_tokens = total_tokens / total_consultas if total_consultas > 0 else 0
+        
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Total Consultas", total_consultas)
+        col2.metric("Total Tokens", f"{total_tokens:,}")
+        col3.metric("Promedio Tokens/Consulta", f"{avg_tokens:.0f}")
+        
+        # Últimas consultas
+        st.subheader("📊 Últimas Consultas")
+        if len(datos) > 0:
+            df = pd.DataFrame(datos[-10:])  # Últimas 10
+            st.dataframe(df[['prompt_tokens', 'completion_tokens', 'total_tokens', 'modelo']])
+    
+    # Estadísticas de conversación
+    st.subheader("💬 Estadísticas de Chat")
+    if "messages" in st.session_state:
+        total_mensajes = len(st.session_state.messages)
+        mensajes_usuario = len([m for m in st.session_state.messages if m["role"] == "user"])
+        mensajes_asistente = len([m for m in st.session_state.messages if m["role"] == "assistant"])
+        
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Total Mensajes", total_mensajes)
+        col2.metric("Mensajes Usuario", mensajes_usuario)
+        col3.metric("Mensajes Asistente", mensajes_asistente)
+    
+    # Configuración
+    st.subheader("⚙️ Configuración Actual")
+    st.info(f"**Modelo:** google/gemini-2.0-flash-exp:free")
+    st.info(f"**Límite tokens/respuesta:** 1,024")
+    st.info(f"**PDFs cargados:** {len(PDF_FILES)}")
+    
+    # Botón para limpiar datos
+    if st.button("🗑️ Limpiar Métricas", type="secondary"):
+        if "uso_tokens" in st.session_state:
+            st.session_state.uso_tokens = []
+        st.rerun()
+
 # Configurar página
 st.set_page_config(
     page_title="Asistente de Ventas ESET",
@@ -411,128 +460,129 @@ def main():
     if "admin" in query_params and query_params["admin"][0] == "eset2024":
         st.session_state.admin_authenticated = True
         st.session_state.show_admin = True
+    
     # Interfaz limpia y profesional
     st.title("🤖 Asistente de Ventas ESET")
     st.markdown("### Especialista en productos de ciberseguridad")
     st.markdown("---")
     
     # Sidebar con información para el cliente Y debug
-with st.sidebar:
-    st.header("💬 Chat ESET")
-    st.markdown("""
-    **¿En qué puedo ayudarte?**
-    
-    - Información sobre productos
-    - Características y beneficios
-    - Comparación de soluciones
-    - Cotizaciones personalizadas
-    
-    *Escribe tu consulta en el chat*
-    """)
-    
-    st.divider()
-    st.markdown("**📞 Contacto**")
-    st.markdown("""
-    ¿Prefieres hablar con un especialista?
-    
-    📧 enzo@cice.ar
-    """)
-    
-    st.divider()
-    st.markdown("**🔧 Estado del Sistema**")
-    
-    # ==== BOTÓN SOLO PARA TI (cuando accedes por URL secreta) ====
-    if st.session_state.get('admin_authenticated', False):
+    with st.sidebar:
+        st.header("💬 Chat ESET")
+        st.markdown("""
+        **¿En qué puedo ayudarte?**
+        
+        - Información sobre productos
+        - Características y beneficios
+        - Comparación de soluciones
+        - Cotizaciones personalizadas
+        
+        *Escribe tu consulta en el chat*
+        """)
+        
         st.divider()
-        if st.button("📊 Panel de Control Admin"):
-            st.session_state.show_admin = True
+        st.markdown("**📞 Contacto**")
+        st.markdown("""
+        ¿Prefieres hablar con un especialista?
+        
+        📧 enzo@cice.ar
+        """)
+        
+        st.divider()
+        st.markdown("**🔧 Estado del Sistema**")
+        
+        # ==== BOTÓN SOLO PARA TI (cuando accedes por URL secreta) ====
+        if st.session_state.get('admin_authenticated', False):
+            st.divider()
+            if st.button("📊 Panel de Control Admin"):
+                st.session_state.show_admin = True
 
-# Inicializar base de conocimiento CON DEBUG
-knowledge_loaded = initialize_knowledge_base()
-
-# Inicializar session state
-if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "assistant", "content": "¡Hola! Soy tu especialista en ventas de ESET. ¿En qué puedo ayudarte con nuestros productos de ciberseguridad?"}
-    ]
-
-if "awaiting_form" not in st.session_state:
-    st.session_state.awaiting_form = False
-
-# Mostrar historial de mensajes
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
-# MOSTRAR FORMULARIO SI ESTÁ ACTIVO
-if st.session_state.awaiting_form:
-    st.markdown("---")
-    st.subheader("📝 Formulario de Contacto")
-    st.info("👇 Completa tus datos y un especialista te contactará en menos de 24 horas")
+    # Inicializar base de conocimiento CON DEBUG
+    knowledge_loaded = initialize_knowledge_base()
     
-    with st.form(key="contact_form_main", clear_on_submit=True):
-        col1, col2 = st.columns(2)
+    # Inicializar session state
+    if "messages" not in st.session_state:
+        st.session_state.messages = [
+            {"role": "assistant", "content": "¡Hola! Soy tu especialista en ventas de ESET. ¿En qué puedo ayudarte con nuestros productos de ciberseguridad?"}
+        ]
+    
+    if "awaiting_form" not in st.session_state:
+        st.session_state.awaiting_form = False
+    
+    # Mostrar historial de mensajes
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+    
+    # MOSTRAR FORMULARIO SI ESTÁ ACTIVO
+    if st.session_state.awaiting_form:
+        st.markdown("---")
+        st.subheader("📝 Formulario de Contacto")
+        st.info("👇 Completa tus datos y un especialista te contactará en menos de 24 horas")
         
-        with col1:
-            nombre = st.text_input("Nombre completo*", placeholder="Ej: Juan Pérez")
-            email = st.text_input("Email*", placeholder="juan@empresa.com")
-            telefono = st.text_input("Teléfono*", placeholder="+54 11 1234-5678")
-        
-        with col2:
-            empresa = st.text_input("Empresa", placeholder="Nombre de tu empresa")
-            interes = st.selectbox(
-                "Principal interés*",
-                ["Selecciona una opción", "ESET PROTECT Elite", "ESET PROTECT Enterprise", 
-                 "ESET PROTECT Complete", "ESET PROTECT Advanced", "ESET PROTECT Entry", 
-                 "Detección y Respuesta", "Seguridad para Endpoints", "Otro"],
-                index=0
-            )
-        
-        # Mostrar resumen de la conversación
-        st.subheader("📋 Resumen de tu consulta")
-        conversacion_texto = "\n".join([f"{msg['role']}: {msg['content']}" for msg in st.session_state.messages])
-        resumen_interes = generar_resumen_interes(conversacion_texto, interes)
-        
-        st.info(resumen_interes)
-        
-        col_btn1, col_btn2 = st.columns([1, 1])
-        with col_btn1:
-            submitted = st.form_submit_button("🚀 Enviar mis datos", use_container_width=True)
-        with col_btn2:
-            cancelled = st.form_submit_button("❌ Cancelar", use_container_width=True)
-        
-        if cancelled:
-            st.session_state.awaiting_form = False
-            st.rerun()
-        
-        if submitted:
-            # Validaciones
-            if not nombre or not email or not telefono:
-                st.error("❌ Por favor completa todos los campos obligatorios (*)")
-            elif interes == "Selecciona una opción":
-                st.error("❌ Por favor selecciona tu interés principal")
-            elif "@" not in email or "." not in email:
-                st.error("❌ Por favor ingresa un email válido")
-            else:
-                # Preparar datos
-                form_data = {
-                    'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    'nombre': nombre.strip(),
-                    'email': email.strip().lower(),
-                    'telefono': telefono.strip(),
-                    'empresa': empresa.strip() if empresa else "No especificada",
-                    'interes': interes,
-                    'consulta_original': st.session_state.get('last_query', '')[:200],
-                    'resumen_interes': resumen_interes
-                }
-                
-                # Guardar SOLO en Google Sheets
-                if guardar_lead_sheets(form_data):
-                    st.success("✅ ¡Datos enviados correctamente!")
-                    st.balloons()
+        with st.form(key="contact_form_main", clear_on_submit=True):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                nombre = st.text_input("Nombre completo*", placeholder="Ej: Juan Pérez")
+                email = st.text_input("Email*", placeholder="juan@empresa.com")
+                telefono = st.text_input("Teléfono*", placeholder="+54 11 1234-5678")
+            
+            with col2:
+                empresa = st.text_input("Empresa", placeholder="Nombre de tu empresa")
+                interes = st.selectbox(
+                    "Principal interés*",
+                    ["Selecciona una opción", "ESET PROTECT Elite", "ESET PROTECT Enterprise", 
+                     "ESET PROTECT Complete", "ESET PROTECT Advanced", "ESET PROTECT Entry", 
+                     "Detección y Respuesta", "Seguridad para Endpoints", "Otro"],
+                    index=0
+                )
+            
+            # Mostrar resumen de la conversación
+            st.subheader("📋 Resumen de tu consulta")
+            conversacion_texto = "\n".join([f"{msg['role']}: {msg['content']}" for msg in st.session_state.messages])
+            resumen_interes = generar_resumen_interes(conversacion_texto, interes)
+            
+            st.info(resumen_interes)
+            
+            col_btn1, col_btn2 = st.columns([1, 1])
+            with col_btn1:
+                submitted = st.form_submit_button("🚀 Enviar mis datos", use_container_width=True)
+            with col_btn2:
+                cancelled = st.form_submit_button("❌ Cancelar", use_container_width=True)
+            
+            if cancelled:
+                st.session_state.awaiting_form = False
+                st.rerun()
+            
+            if submitted:
+                # Validaciones
+                if not nombre or not email or not telefono:
+                    st.error("❌ Por favor completa todos los campos obligatorios (*)")
+                elif interes == "Selecciona una opción":
+                    st.error("❌ Por favor selecciona tu interés principal")
+                elif "@" not in email or "." not in email:
+                    st.error("❌ Por favor ingresa un email válido")
+                else:
+                    # Preparar datos
+                    form_data = {
+                        'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        'nombre': nombre.strip(),
+                        'email': email.strip().lower(),
+                        'telefono': telefono.strip(),
+                        'empresa': empresa.strip() if empresa else "No especificada",
+                        'interes': interes,
+                        'consulta_original': st.session_state.get('last_query', '')[:200],
+                        'resumen_interes': resumen_interes
+                    }
                     
-                    # Agregar mensaje de confirmación
-                    confirmation_msg = f"""✅ ¡Perfecto {nombre}! He registrado tus datos de contacto. 
+                    # Guardar SOLO en Google Sheets
+                    if guardar_lead_sheets(form_data):
+                        st.success("✅ ¡Datos enviados correctamente!")
+                        st.balloons()
+                        
+                        # Agregar mensaje de confirmación
+                        confirmation_msg = f"""✅ ¡Perfecto {nombre}! He registrado tus datos de contacto. 
 
 **Resumen de tu interés:**
 {resumen_interes}
@@ -543,36 +593,36 @@ Un especialista de ESET te contactará en las próximas 24 horas para:
 - ✅ Entregarte una cotización detallada
 
 ¡Estamos aquí para ayudarte! 🚀"""
-                    
-                    st.session_state.messages.append({"role": "assistant", "content": confirmation_msg})
-                    
-                    # Desactivar formulario
-                    st.session_state.awaiting_form = False
-                    
-                    # Recargar después de enviar
-                    st.rerun()
-                else:
-                    st.error("❌ Hubo un error al guardar tus datos. Por favor intenta nuevamente.")
-
-# Input del usuario - SOLO si NO hay formulario activo
-if not st.session_state.awaiting_form:
-    if prompt := st.chat_input("Escribe tu pregunta sobre productos ESET..."):
-        # Guardar último query
-        st.session_state.last_query = prompt
-        
-        # Agregar mensaje del usuario
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        
-        # Mostrar mensaje del usuario inmediatamente
-        with st.chat_message("user"):
-            st.markdown(prompt)
-        
-        # Verificar intención de contacto
-        is_contact_intent = extract_contact_intent(prompt)
-        
-        if is_contact_intent:
-            # Activar formulario
-            contact_response = """¡Excelente! Veo que estás interesado en nuestros productos de ESET. 
+                        
+                        st.session_state.messages.append({"role": "assistant", "content": confirmation_msg})
+                        
+                        # Desactivar formulario
+                        st.session_state.awaiting_form = False
+                        
+                        # Recargar después de enviar
+                        st.rerun()
+                    else:
+                        st.error("❌ Hubo un error al guardar tus datos. Por favor intenta nuevamente.")
+    
+    # Input del usuario - SOLO si NO hay formulario activo
+    if not st.session_state.awaiting_form:
+        if prompt := st.chat_input("Escribe tu pregunta sobre productos ESET..."):
+            # Guardar último query
+            st.session_state.last_query = prompt
+            
+            # Agregar mensaje del usuario
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            
+            # Mostrar mensaje del usuario inmediatamente
+            with st.chat_message("user"):
+                st.markdown(prompt)
+            
+            # Verificar intención de contacto
+            is_contact_intent = extract_contact_intent(prompt)
+            
+            if is_contact_intent:
+                # Activar formulario
+                contact_response = """¡Excelente! Veo que estás interesado en nuestros productos de ESET. 
 
 Para ofrecerte la mejor atención personalizada y una cotización adaptada a tus necesidades, me gustaría contar con algunos datos.
 
@@ -584,44 +634,40 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 - ✅ Entregarte una cotización detallada
 
 ¡Estamos aquí para ayudarte! 🚀"""
+                
+                st.session_state.messages.append({"role": "assistant", "content": contact_response})
+                
+                # Mostrar respuesta del asistente inmediatamente
+                with st.chat_message("assistant"):
+                    st.markdown(contact_response)
+                
+                st.session_state.awaiting_form = True
+                
+                # Recargar para mostrar el formulario
+                st.rerun()
             
-            st.session_state.messages.append({"role": "assistant", "content": contact_response})
-            
-            # Mostrar respuesta del asistente inmediatamente
-            with st.chat_message("assistant"):
-                st.markdown(contact_response)
-            
-            st.session_state.awaiting_form = True
-            
-            # Recargar para mostrar el formulario
-            st.rerun()
-        
-        else:
-            # Búsqueda normal
-            with st.chat_message("assistant"):
-                with st.spinner("Buscando información..."):
-                    try:
-                        relevant_docs = search_similar_documents(prompt, top_k=5)
-                        response = generate_contextual_response(prompt, relevant_docs)
-                        st.markdown(response)
-                        st.session_state.messages.append({"role": "assistant", "content": response})
+            else:
+                # Búsqueda normal
+                with st.chat_message("assistant"):
+                    with st.spinner("Buscando información..."):
+                        try:
+                            relevant_docs = search_similar_documents(prompt, top_k=5)
+                            response = generate_contextual_response(prompt, relevant_docs)
+                            st.markdown(response)
+                            st.session_state.messages.append({"role": "assistant", "content": response})
+                            
+                            # Sugerir contacto si es relevante
+                            if any(word in prompt.lower() for word in ['precio', 'costo', 'cotiz', 'compra', 'licencia', 'demo']):
+                                st.info("💡 **¿Te interesa una cotización personalizada?** Escribe 'quiero dejar mis datos' y te ayudo con el proceso.")
                         
-                        # Sugerir contacto si es relevante
-                        if any(word in prompt.lower() for word in ['precio', 'costo', 'cotiz', 'compra', 'licencia', 'demo']):
-                            st.info("💡 **¿Te interesa una cotización personalizada?** Escribe 'quiero dejar mis datos' y te ayudo con el proceso.")
-                    
-                    except Exception as e:
-                        error_msg = f"En este momento tengo dificultades técnicas. Para tu pregunta sobre '{prompt}', te recomiendo escribir 'quiero contacto' para que un especialista te atienda personalmente."
-                        st.markdown(error_msg)
-                        st.session_state.messages.append({"role": "assistant", "content": error_msg})
+                        except Exception as e:
+                            error_msg = f"En este momento tengo dificultades técnicas. Para tu pregunta sobre '{prompt}', te recomiendo escribir 'quiero contacto' para que un especialista te atienda personalmente."
+                            st.markdown(error_msg)
+                            st.session_state.messages.append({"role": "assistant", "content": error_msg})
 
-# MOSTRAR DASHBOARD ADMIN SOLO SI ESTÁ ACTIVADO
-if st.session_state.get('show_admin', False):
-    mostrar_dashboard_admin()
+    # MOSTRAR DASHBOARD ADMIN SOLO SI ESTÁ ACTIVADO
+    if st.session_state.get('show_admin', False):
+        mostrar_dashboard_admin()
 
 if __name__ == "__main__":
     main()
-
-
-
-
