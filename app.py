@@ -124,7 +124,7 @@ class OpenRouterClient:
                     }
                 ],
                 "temperature": 0.7,
-                "max_tokens": 1024
+                "max_tokens": 500
             }
             
             response = requests.post(
@@ -671,3 +671,4 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
