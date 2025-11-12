@@ -649,7 +649,11 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
                             st.markdown(response)
                             st.session_state.messages.append({"role": "assistant", "content": response})
                             
-                            if any(word in prompt.lower() for word in ['precio', 'costo', 'cotiz', 'compra', 'licencia', 'demo']):
+                            if any(word in prompt.lower() for word in ['precio', 'costo', 'cotiz', 'compra', 'licencia', 'demo', 'contratar', 'adquirir', 'comprar', 'venta', 'vendedor', 'comercial', 
+                                                                           'me gustaría que me contacten', 'quisiera que me llamen','necesito hablar con alguien', 'busco asesoramiento','quiero dejar mis datos para', 
+                                                                       'deseo que me cotizen','me pueden asesorar', 'necesito una cotización','estoy buscando precios', 'quiero información sobre precios','me interesa el producto', 'deseo adquirir el servicio',
+                                                                       'presupuesto', 'tarifa', 'pago', 'mensual', 'anual', 'plan', 'precios', 'costos', 'cuanto cuesta', 'valor', 'precio final', 'oferta', 'promocion', 
+                                                                       'descuento', 'caracteristicas', 'especificaciones', 'funciones', 'beneficios', 'comparar', 'vs', 'versus', 'diferencia', 'mejor', 'recomendar', 'que me conviene']):
                                 st.info("💡 **¿Te interesa una cotización personalizada?** Escribe 'quiero dejar mis datos' y te ayudo con el proceso.")
                         
                         except Exception as e:
@@ -662,3 +666,4 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
