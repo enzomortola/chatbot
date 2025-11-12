@@ -369,9 +369,47 @@ def init_chroma_db():
     return client, collection
 
 def extract_contact_intent(message):
-    """Detectar si el usuario quiere dejar datos de contacto"""
-    message_lower = message.lower()
-    return any(keyword in message_lower for keyword in CONTACT_KEYWORDS)
+    """Detectar si el usuario quiere dejar datos de contacto - VERSIÓN MEJORADA"""
+    message_lower = message.lower().strip()
+    
+    # Limpiar el texto de signos de puntuación
+    import string
+    message_clean = message_lower.translate(str.maketrans('', '', string.punctuation))
+    
+    # Verificar palabras clave individuales
+    for keyword in CONTACT_KEYWORDS:
+        if keyword in message_clean:
+            return True
+    
+    # Verificar patrones comunes
+    patterns = [
+        r'me gustaría.*contacto',
+        r'quisiera.*contacto', 
+        r'necesito.*contacto',
+        r'deseo.*contacto',
+        r'quiero.*contacto',
+        r'me pueden.*contactar',
+        r'pueden.*contactarme',
+        r'hablar.*con.*alguien',
+        r'hablar.*persona',
+        r'asesoramiento',
+        r'consultar.*precio',
+        r'información.*precio',
+        r'cuanto.*cuesta',
+        r'valor.*producto',
+        r'me interesa.*comprar',
+        r'quiero.*comprar',
+        r'deseo.*comprar',
+        r'necesito.*comprar',
+        r'adquirir.*producto',
+        r'contratar.*servicio'
+    ]
+    
+    for pattern in patterns:
+        if re.search(pattern, message_clean):
+            return True
+    
+    return False
 
 def generar_resumen_interes(historial_conversacion, interes_seleccionado):
     """Generar un resumen de lo que el cliente está interesado en comprar"""
@@ -779,4 +817,5 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
 
