@@ -604,6 +604,56 @@ def initialize_knowledge_base():
         st.sidebar.error("❌ No se pudo crear la base de conocimiento")
         return False
 
+def generate_quick_response(query):
+    """Respuestas rápidas pero amigables"""
+    quick_responses = {
+        'precio': "¡Los precios varían según el producto y cantidad de licencias! ¿Qué tipo de protección necesitas? 😊",
+        'costo': "Los costos dependen de tus necesidades específicas. ¿Es para uso personal o empresarial?",
+        'catálogo': "¡Tenemos un catálogo completo! Desde antivirus básico hasta seguridad empresarial avanzada. ¿Te interesa conocer las opciones?",
+        'catalogo': "¡Claro! Tenemos soluciones para todos los needs. ¿Qué tipo de protección buscas?",
+        'opciones': "¡Tenemos varias opciones! ESET Internet Security para hogares, ESET PROTECT para empresas. ¿Cuál te interesa?",
+        'contacto': "¡Perfecto! ¿Te gustaría que un especialista te contacte personalmente? Solo dime 'sí' y te ayudo con el proceso. 😊",
+        'sí': "¡Excelente! Vamos a registrar tus datos para que un especialista te contacte. 📞",
+        'si': "¡Excelente! Vamos a registrar tus datos para que un especialista te contacte. 📞",
+    }
+    
+    query_lower = query.lower()
+    for key, response in quick_responses.items():
+        if key in query_lower:
+            return response
+    
+    return None
+
+def extract_contact_intent(message):
+    """Detectar si el usuario muestra interés en contacto - SOLO DETECTAR, NO ACTIVAR"""
+    message_lower = message.lower().strip()
+    
+    import string
+    message_clean = message_lower.translate(str.maketrans('', '', string.punctuation))
+    
+    # PALABRAS que indican INTERÉS en contacto (no urgencia)
+    contact_interest_keywords = [
+        'contacto', 'contactar', 'contactarme', 'llamar', 'llámenme', 
+        'escribir', 'escribanme', 'datos de contacto', 'hablar con asesor',
+        'ejecutivo', 'asesor', 'reunión', 'cita', 'cotización', 'presupuesto',
+        'quiero que me contacten', 'deseo contacto', 'me interesa contacto',
+        'agendar', 'coordinar'
+    ]
+    
+    # Si tiene palabras de interés EN contacto
+    has_contact_interest = any(keyword in message_clean for keyword in contact_interest_keywords)
+    
+    # También activar si dice explícitamente "sí" después de una invitación
+    if message_clean in ['sí', 'si', 'ok', 'dale', 'perfecto']:
+        # Verificar si el último mensaje del asistente fue una invitación
+        if st.session_state.messages and len(st.session_state.messages) > 0:
+            last_assistant_msg = st.session_state.messages[-1]["content"] if st.session_state.messages[-1]["role"] == "assistant" else ""
+            if "¿Te gustaría que un especialista te contacte" in last_assistant_msg:
+                return True
+    
+    return has_contact_interest
+
+
 # ===========================
 # INTERFAZ PRINCIPAL
 # ===========================
