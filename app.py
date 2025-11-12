@@ -406,7 +406,11 @@ def initialize_knowledge_base():
 # INTERFAZ PRINCIPAL
 # ===========================
 
-def main():
+def main():.
+        query_params = st.experimental_get_query_params()
+    if "admin" in query_params and query_params["admin"][0] == "eset2024":
+        st.session_state.admin_authenticated = True
+        st.session_state.show_admin = True
     # Interfaz limpia y profesional
     st.title("🤖 Asistente de Ventas ESET")
     st.markdown("### Especialista en productos de ciberseguridad")
@@ -607,5 +611,6 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
 
 
