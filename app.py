@@ -15,6 +15,56 @@ import io
 import gspread
 from google.oauth2.service_account import Credentials
 
+ADMIN_PASSWORD = "eset_admin_ciceEnzo"  # Cambia por tu password
+def mostrar_dashboard_admin():
+    st.title("🔧 Dashboard de Administración - ESET")
+    st.markdown("---")
+    
+    # Métricas de uso
+    if "uso_tokens" in st.session_state and st.session_state.uso_tokens:
+        datos = st.session_state.uso_tokens
+        
+        total_tokens = sum([x['total_tokens'] for x in datos])
+        total_consultas = len(datos)
+        avg_tokens = total_tokens / total_consultas if total_consultas > 0 else 0
+        
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Total Consultas", total_consultas)
+        col2.metric("Total Tokens", f"{total_tokens:,}")
+        col3.metric("Promedio Tokens/Consulta", f"{avg_tokens:.0f}")
+        
+        # Últimas consultas
+        st.subheader("📊 Últimas Consultas")
+        if len(datos) > 0:
+            df = pd.DataFrame(datos[-10:])  # Últimas 10
+            st.dataframe(df[['prompt_tokens', 'completion_tokens', 'total_tokens', 'modelo']])
+    
+    # Estadísticas de conversación
+    st.subheader("💬 Estadísticas de Chat")
+    if "messages" in st.session_state:
+        total_mensajes = len(st.session_state.messages)
+        mensajes_usuario = len([m for m in st.session_state.messages if m["role"] == "user"])
+        mensajes_asistente = len([m for m in st.session_state.messages if m["role"] == "assistant"])
+        
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Total Mensajes", total_mensajes)
+        col2.metric("Mensajes Usuario", mensajes_usuario)
+        col3.metric("Mensajes Asistente", mensajes_asistente)
+    
+    # Configuración
+    st.subheader("⚙️ Configuración Actual")
+    st.info(f"**Modelo:** google/gemini-2.0-flash-exp:free")
+    st.info(f"**Límite tokens/respuesta:** 1,024")
+    st.info(f"**PDFs cargados:** {len(PDF_FILES)}")
+    
+    # Botón para limpiar datos
+    if st.button("🗑️ Limpiar Métricas", type="secondary"):
+        if "uso_tokens" in st.session_state:
+            st.session_state.uso_tokens = []
+        st.rerun()
+
+
+
 # Configurar página
 st.set_page_config(
     page_title="Asistente de Ventas ESET",
@@ -407,6 +457,7 @@ def initialize_knowledge_base():
 # ===========================
 
 def main():
+    def main():
     # Interfaz limpia y profesional
     st.title("🤖 Asistente de Ventas ESET")
     st.markdown("### Especialista en productos de ciberseguridad")
@@ -436,6 +487,24 @@ def main():
         
         st.divider()
         st.markdown("**🔧 Estado del Sistema**")
+        
+        # ==== 👇 AQUÍ PEGA EL CÓDIGO DEL ADMIN ====
+        st.divider()
+        st.markdown("**🔧 Admin**")
+        
+        # Input de password (oculto por defecto)
+        if st.checkbox("Acceso Admin"):
+            password = st.text_input("Password:", type="password")
+            if password == ADMIN_PASSWORD:
+                st.session_state.admin_authenticated = True
+                st.success("✅ Acceso concedido")
+            elif password and password != ADMIN_PASSWORD:
+                st.error("❌ Password incorrecto")
+        
+        # Botón para mostrar dashboard si está autenticado
+        if st.session_state.get('admin_authenticated', False):
+            if st.button("📊 Ver Dashboard Admin"):
+                st.session_state.show_admin = True
         
     # Inicializar base de conocimiento CON DEBUG
     knowledge_loaded = initialize_knowledge_base()
@@ -605,6 +674,8 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
                             st.markdown(error_msg)
                             st.session_state.messages.append({"role": "assistant", "content": error_msg})
 
+    if st.session_state.get('show_admin', False):
+        mostrar_dashboard_admin()
+
 if __name__ == "__main__":
     main()
-
