@@ -1,9 +1,10 @@
+google-generativeai
 streamlit
 requests
+PyPDF2
 sentence-transformers
 chromadb
-pypdf2
+numpy
+pandas
 gspread
 google-auth
-pandas
-numpy
