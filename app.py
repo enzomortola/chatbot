@@ -15,6 +15,13 @@ import io
 import gspread
 from google.oauth2.service_account import Credentials
 
+# Configurar página
+st.set_page_config(
+    page_title="Asistente de Ventas ESET",
+    page_icon="🤖",
+    layout="wide"
+)
+
 ADMIN_PASSWORD = "eset_admin_ciceEnzo"
 MAX_TOKENS = 500  # 👈 VARIABLE GLOBAL PARA TOKENS
 
@@ -82,14 +89,6 @@ def mostrar_dashboard_admin():
         if "uso_tokens" in st.session_state:
             st.session_state.uso_tokens = []
         st.rerun()
-
-# Configurar página
-st.set_page_config(
-    page_title="Asistente de Ventas ESET",
-    page_icon="🤖",
-    layout="wide"
-)
-
 # Configuración de rutas de documentos
 DOCUMENTS_FOLDER = "documentos"
 
@@ -848,4 +847,5 @@ Podemos:
     # MOSTRAR DASHBOARD ADMIN SOLO SI ESTÁ ACTIVADO
     if st.session_state.get('show_admin', False):
         mostrar_dashboard_admin()
+
 
