@@ -124,29 +124,27 @@ CONTACT_KEYWORDS = [
 class GeminiClient:
     def __init__(self, api_key):
         self.api_key = api_key
-        genai.configure(api_key=api_key)
-        
-        # Configurar el modelo
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
-        self.chat = None  # Para mantener conversación
-        
-        st.sidebar.success("✅ Gemini Pro configurado")
+        # CAMBIAR ESTA LÍNEA:
+        self.base_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent"
+        # 👆 Cambiar "gemini-1.5-flash" por "gemini-2.0-flash-exp"
+        st.sidebar.success("✅ Gemini 2.0 Flash configurado")
 
-    def generate_content(self, prompt):
-        """Generar contenido usando Gemini Pro API"""
-        try:
-            # Iniciar nueva conversación o continuar existente
-            if self.chat is None:
-                self.chat = self.model.start_chat(history=[])
-            
-            # Enviar mensaje
-            response = self.chat.send_message(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
-                    max_output_tokens=MAX_TOKENS,
-                    temperature=0.7
-                )
-            )
+def generate_content(self, prompt):
+    try:
+        # Y también cambiar aquí en el payload:
+        payload = {
+            "contents": [{
+                "parts": [{"text": prompt}]
+            }],
+            "generationConfig": {
+                "maxOutputTokens": MAX_TOKENS,
+                "temperature": 0.7
+            }
+        }
+        
+        # Y actualizar las métricas:
+        uso = calcular_tokens_y_costo(prompt, respuesta_final, "gemini-2.0-flash-exp")
+        # 👆 Cambiar aquí también
             
             respuesta_final = response.text
             
@@ -699,5 +697,6 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
 
 
