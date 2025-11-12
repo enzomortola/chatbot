@@ -16,7 +16,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 
 ADMIN_PASSWORD = "eset_admin_ciceEnzo"
-MAX_TOKENS = 500  # 👈 VARIABLE GLOBAL PARA TOKENS
+MAX_TOKENS = 200  # 👈 VARIABLE GLOBAL PARA TOKENS
 
 def calcular_tokens_y_costo(prompt, response, model_used):
     """
@@ -826,6 +826,7 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
 
 
 
