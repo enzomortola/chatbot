@@ -504,34 +504,48 @@ def generate_contextual_response(query, context_documents):
     try:
         model = load_openrouter_model()
         if not model:
-            return f"Como especialista en ESET, puedo ayudarte con información sobre nuestros productos de ciberseguridad. Para tu pregunta sobre '{query}', te recomiendo contactar con nuestro equipo de ventas."
+            return "¡Te recomiendo contactar a nuestro equipo de ventas para una atención personalizada! 😊"
         
         if context_documents:
-            context = "\n\n".join(context_documents[:3])
+            context = "\n".join(context_documents[:2])
             
-            prompt = f"""Eres un experto vendedor de ESET con acceso a toda la información de productos y técnicas de ventas.
+            prompt = f"""Eres un vendedor amable de ESET. Responde de forma BREVE pero CALUROSA. Ten en cuenta que quiero consumir POCOS tokens, responde lo que consideres NECESARIO, pero BREVEMENTE.
 
-INFORMACIÓN RELEVANTE DE NUESTROS DOCUMENTOS:
-{context}
-
-PREGUNTA DEL CLIENTE: {query}
-
-Responde como un vendedor profesional de ESET usando la información proporcionada.
-
-RESPUESTA:"""
-        else:
-            prompt = f"""Eres un vendedor experto de ESET. Responde a esta pregunta de manera profesional y útil.
+CONTEXTO: {context}
 
 PREGUNTA: {query}
 
-RESPUESTA:"""
+Reglas:
+- Mantén un tono amigable 😊
+- Ve directo al punto
+- Termina con una pregunta o invitación a dejar los datos de contacto.
+
+RESPUESTA BREVE Y AMABLE:"""
+        else:
+            prompt = f"""Responde de forma BREVE pero CÁLIDA (1-2 oraciones).
+
+PREGUNTA: {query}
+
+RESPUESTA AMABLE Y CONCISA:"""
         
         response = model.generate_content(prompt)
+        
+        # Forzar brevedad suavemente
+        sentences = response.split('. ')
+        if len(sentences) > 3:
+            response = '. '.join(sentences[:3])
+            if not response.endswith('.'):
+                response += '.'
+        
+        if len(response) > 350:
+            response = response[:350]
+            if not response.endswith('.'):
+                response += '...'
+                
         return response
         
     except Exception as e:
-        st.sidebar.error(f"❌ Error generando respuesta: {e}")
-        return f"Como especialista en ESET, puedo ayudarte con información sobre nuestros productos de ciberseguridad. Para tu pregunta sobre '{query}', te recomiendo contactar con nuestro equipo de ventas."
+        return "¡Perfecto! Te recomiendo contactar a nuestro equipo para más detalles. 😊"
 
 @st.cache_resource
 def initialize_knowledge_base():
@@ -826,6 +840,7 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
 
 
 
