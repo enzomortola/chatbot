@@ -151,7 +151,7 @@ class GeminiClient:
             respuesta_final = response.text
             
             # Guardar métricas
-            uso = calcular_tokens_y_costo(prompt, respuesta_final, "gemini-1.5-flash")
+            uso = calcular_tokens_y_costo(prompt, respuesta_final, "gemini-2.0-flash")
             if "uso_tokens" not in st.session_state:
                 st.session_state.uso_tokens = []
             st.session_state.uso_tokens.append(uso)
@@ -699,4 +699,5 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
 
