@@ -73,7 +73,7 @@ def mostrar_dashboard_admin():
     
     # Configuración
     st.subheader("⚙️ Configuración Actual")
-    st.info(f"**Modelo:** gemini-2.0-flash")
+    st.info(f"**Modelo:** gemini-2.0-flash-exp")
     st.info(f"**Límite tokens/respuesta:** {MAX_TOKENS}")
     st.info(f"**PDFs cargados:** {len(PDF_FILES)}")
     
@@ -117,30 +117,54 @@ CONTACT_KEYWORDS = [
 ]
 
 # ===========================
-# CLIENTE GEMINI
+# CLIENTE GEMINI 2.0
 # ===========================
 
 class GeminiClient:
     def __init__(self, api_key):
         self.api_key = api_key
-        self.model_name = "gemini-2.0-flash"
+        self.model_name = "gemini-2.0-flash-exp"
         self.configure_client()
         
     def configure_client(self):
         """Configurar el cliente de Gemini"""
         try:
             genai.configure(api_key=self.api_key)
+            
+            # Listar modelos disponibles para debug
+            try:
+                models = genai.list_models()
+                available_models = [model.name for model in models]
+                st.sidebar.info(f"📋 Modelos disponibles: {len(available_models)}")
+                
+                # Buscar modelos 2.0
+                flash_models = [model for model in available_models if 'flash' in model.lower()]
+                st.sidebar.info(f"⚡ Modelos Flash: {[m.split('/')[-1] for m in flash_models]}")
+                
+            except Exception as e:
+                st.sidebar.warning(f"⚠️ No se pudieron listar modelos: {e}")
+            
+            # Intentar cargar el modelo 2.0
             self.model = genai.GenerativeModel(self.model_name)
-            st.sidebar.success("✅ Gemini configurado correctamente")
+            st.sidebar.success(f"✅ Gemini 2.0 configurado: {self.model_name}")
+            
         except Exception as e:
-            st.sidebar.error(f"❌ Error configurando Gemini: {e}")
-            self.model = None
+            st.sidebar.error(f"❌ Error configurando Gemini 2.0: {e}")
+            # Fallback a gemini-1.5-flash si 2.0 no está disponible
+            try:
+                st.sidebar.info("🔄 Intentando con gemini-1.5-flash como fallback...")
+                self.model_name = "gemini-1.5-flash"
+                self.model = genai.GenerativeModel(self.model_name)
+                st.sidebar.success(f"✅ Fallback exitoso: {self.model_name}")
+            except Exception as fallback_error:
+                st.sidebar.error(f"❌ Error en fallback: {fallback_error}")
+                self.model = None
 
     def generate_content(self, prompt):
-        """Generar contenido usando Gemini API"""
+        """Generar contenido usando Gemini 2.0 API"""
         try:
             if not self.model:
-                return "Lo siento, hay un problema con la configuración del modelo."
+                return "Lo siento, hay un problema con la configuración del modelo. Por favor intenta más tarde."
             
             response = self.model.generate_content(
                 prompt,
@@ -687,5 +711,3 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
-
-
