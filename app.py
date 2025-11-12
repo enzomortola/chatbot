@@ -614,6 +614,22 @@ def main():
         st.session_state.admin_authenticated = True
         st.session_state.show_admin = True
     
+    # INICIALIZAR TODOS LOS session_state NECESARIOS
+    if "awaiting_form" not in st.session_state:
+        st.session_state.awaiting_form = False
+    if "messages" not in st.session_state:
+        st.session_state.messages = [
+            {"role": "assistant", "content": "¡Hola! Soy tu especialista en ventas de ESET. ¿En qué puedo ayudarte con nuestros productos de ciberseguridad?"}
+        ]
+    if "last_query" not in st.session_state:
+        st.session_state.last_query = ""
+    if "admin_authenticated" not in st.session_state:
+        st.session_state.admin_authenticated = False
+    if "show_admin" not in st.session_state:
+        st.session_state.show_admin = False
+    if "uso_tokens" not in st.session_state:
+        st.session_state.uso_tokens = []
+    
     # Interfaz limpia y profesional
     st.title("🤖 Asistente de Ventas ESET")
     st.markdown("### Especialista en productos de ciberseguridad")
@@ -652,16 +668,7 @@ def main():
 
     # Inicializar base de conocimiento CON DEBUG
     knowledge_loaded = initialize_knowledge_base()
-    
-    # Inicializar session state
-    if "messages" not in st.session_state:
-        st.session_state.messages = [
-            {"role": "assistant", "content": "¡Hola! Soy tu especialista en ventas de ESET. ¿En qué puedo ayudarte con nuestros productos de ciberseguridad?"}
-        ]
-    
-    if "awaiting_form" not in st.session_state:
-        st.session_state.awaiting_form = False
-    
+
     # Mostrar historial de mensajes
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
@@ -766,42 +773,41 @@ Un especialista de ESET te contactará en las próximas 24 horas.
                         st.error("❌ Hubo un error al guardar tus datos. Por favor intenta nuevamente.")
     
     # Input del usuario - SOLO si NO hay formulario activo
-    # Input del usuario - SOLO si NO hay formulario activo
-if not st.session_state.awaiting_form:
-    if prompt := st.chat_input("Escribe tu pregunta sobre productos ESET..."):
-        # Guardar último query
-        st.session_state.last_query = prompt
-        
-        # Agregar mensaje del usuario
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        
-        # Mostrar mensaje del usuario inmediatamente
-        with st.chat_message("user"):
-            st.markdown(prompt)
-        
-        # Verificar si muestra interés en contacto
-        shows_contact_interest = extract_contact_intent(prompt)
-        
-        with st.chat_message("assistant"):
-            with st.spinner("Buscando información..."):
-                try:
-                    # PRIMERO: Respuesta rápida si existe
-                    quick_response = generate_quick_response(prompt)
-                    if quick_response:
-                        response_text = quick_response
-                    else:
-                        # Búsqueda normal
-                        relevant_docs = search_similar_documents(prompt, top_k=3)
-                        response_text = generate_contextual_response(prompt, relevant_docs)
-                    
-                    # MOSTRAR la respuesta principal
-                    st.markdown(response_text)
-                    st.session_state.messages.append({"role": "assistant", "content": response_text})
-                    
-                    # LUEGO: Si muestra interés en contacto, INVITAR (no forzar)
-                    if shows_contact_interest:
-                        st.markdown("---")
-                        invitation_msg = """**¿Te gustaría que un especialista te contacte personalmente?** 
+    if not st.session_state.awaiting_form:
+        if prompt := st.chat_input("Escribe tu pregunta sobre productos ESET..."):
+            # Guardar último query
+            st.session_state.last_query = prompt
+            
+            # Agregar mensaje del usuario
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            
+            # Mostrar mensaje del usuario inmediatamente
+            with st.chat_message("user"):
+                st.markdown(prompt)
+            
+            # Verificar si muestra interés en contacto
+            shows_contact_interest = extract_contact_intent(prompt)
+            
+            with st.chat_message("assistant"):
+                with st.spinner("Buscando información..."):
+                    try:
+                        # PRIMERO: Respuesta rápida si existe
+                        quick_response = generate_quick_response(prompt)
+                        if quick_response:
+                            response_text = quick_response
+                        else:
+                            # Búsqueda normal
+                            relevant_docs = search_similar_documents(prompt, top_k=3)
+                            response_text = generate_contextual_response(prompt, relevant_docs)
+                        
+                        # MOSTRAR la respuesta principal
+                        st.markdown(response_text)
+                        st.session_state.messages.append({"role": "assistant", "content": response_text})
+                        
+                        # LUEGO: Si muestra interés en contacto, INVITAR (no forzar)
+                        if shows_contact_interest:
+                            st.markdown("---")
+                            invitation_msg = """**¿Te gustaría que un especialista te contacte personalmente?** 
 
 Podemos:
 - 📞 Llamarte para resolver todas tus dudas
@@ -809,29 +815,19 @@ Podemos:
 - 🎯 Asesorarte según tus necesidades específicas
 
 **Solo dime "sí" o escribe "contacto" y te ayudo con el proceso.** 😊"""
+                            
+                            st.markdown(invitation_msg)
+                            st.session_state.messages.append({"role": "assistant", "content": invitation_msg})
                         
-                        st.markdown(invitation_msg)
-                        st.session_state.messages.append({"role": "assistant", "content": invitation_msg})
-                    
-                    # O: Si es consulta de precios/catálogo, sugerir contacto amablemente
-                    elif any(word in prompt.lower() for word in ['precio', 'costo', 'cotiz', 'catálogo', 'catalogo']):
-                        st.info("💡 **¿Te interesa una cotización personalizada?** Solo dime *sí* o escribe *contacto* 📞")
-                        
-                except Exception as e:
-                    error_msg = "¡En este momento te recomiendo contactar directamente a nuestro equipo para la mejor atención! 📞"
-                    st.markdown(error_msg)
-                    st.session_state.messages.append({"role": "assistant", "content": error_msg})
+                        # O: Si es consulta de precios/catálogo, sugerir contacto amablemente
+                        elif any(word in prompt.lower() for word in ['precio', 'costo', 'cotiz', 'catálogo', 'catalogo']):
+                            st.info("💡 **¿Te interesa una cotización personalizada?** Solo dime *sí* o escribe *contacto* 📞")
+                            
+                    except Exception as e:
+                        error_msg = "¡En este momento te recomiendo contactar directamente a nuestro equipo para la mejor atención! 📞"
+                        st.markdown(error_msg)
+                        st.session_state.messages.append({"role": "assistant", "content": error_msg})
 
     # MOSTRAR DASHBOARD ADMIN SOLO SI ESTÁ ACTIVADO
     if st.session_state.get('show_admin', False):
         mostrar_dashboard_admin()
-
-if __name__ == "__main__":
-    main()
-
-
-
-
-
-
-
