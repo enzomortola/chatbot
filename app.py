@@ -73,7 +73,7 @@ def mostrar_dashboard_admin():
     
     # Configuración
     st.subheader("⚙️ Configuración Actual")
-    st.info(f"**Modelo:** Gemini Flash 1.5")
+    st.info(f"**Modelo:** gemini-2.0-flash")
     st.info(f"**Límite tokens/respuesta:** {MAX_TOKENS}")
     st.info(f"**PDFs cargados:** {len(PDF_FILES)}")
     
@@ -687,4 +687,5 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
 
