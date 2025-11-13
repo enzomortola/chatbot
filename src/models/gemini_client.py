@@ -2,7 +2,6 @@
 import google.generativeai as genai
 import streamlit as st
 from src.config.settings import GEMINI_MODEL, MAX_TOKENS
-from src.utils.token_calculator import calcular_tokens_y_costo
 
 class GeminiClient:
     def __init__(self, api_key):
@@ -21,13 +20,16 @@ class GeminiClient:
             st.sidebar.error(f"❌ Error configurando Gemini: {e}")
             self.model = None
     
-    def generate_content(self, prompt):
-        """Generar contenido usando Gemini y devolver respuesta + uso"""
+    def generate_content(self, prompt, max_words=None):
+        """Generar contenido usando Gemini con límite de palabras"""
         try:
             if not self.model:
                 return "🔧 El modelo Gemini no está disponible. Por favor, contacta al administrador.", None
             
-            # Generar respuesta
+            # Agregar límite de palabras al prompt si se especificó
+            if max_words:
+                prompt += f"\n\nIMPORTANTE: Responde en MÁXIMO {max_words} palabras. Sé conciso y directo."
+            
             response = self.model.generate_content(
                 prompt,
                 generation_config=genai.types.GenerationConfig(
@@ -35,14 +37,15 @@ class GeminiClient:
                     temperature=0.7
                 )
             )
+            
             respuesta_final = response.text
             
-            # Calcular tokens usados
-            uso = calcular_tokens_y_costo(prompt, respuesta_final, self.model_name)
+            # Contar palabras para mostrar en el sidebar
+            word_count = len(respuesta_final.split())
+            st.sidebar.info(f"📝 Palabras en respuesta: {word_count}/{max_words or '∞'}")
             
-            return respuesta_final, uso
+            return respuesta_final, None  # Para compatibilidad con el código actual
             
         except Exception as e:
             st.sidebar.error(f"❌ Error con Gemini: {e}")
-            error_msg = "⚠️ Error temporal con Gemini 2.0. Por favor, intenta nuevamente o escribe 'quiero contacto' para hablar con un especialista."
-            return error_msg, None
+            return "⚠️ Error temporal. Por favor, intenta nuevamente o escribe 'quiero contacto'.", None
