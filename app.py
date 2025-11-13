@@ -14,6 +14,7 @@ from pathlib import Path
 import io
 import gspread
 from google.oauth2.service_account import Credentials
+import unicodedata
 
 ADMIN_PASSWORD = "eset_admin_ciceEnzo"
 MAX_TOKENS = 500
@@ -683,5 +684,6 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
 
 
