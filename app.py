@@ -621,7 +621,8 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
                             st.session_state.messages.append({"role": "assistant", "content": response})
                             
                             if any(word in prompt.lower() for word in [
-                                'precio', 'costo', 'cotiz', 'compra', 'licencia', 'demo', 'contratar', 'adquirir', 'comprar', 'venta', 'vendedor', 'comercial', 'asesor', 
+                                'precio', 'costo', 'cotiz', 'compra', 'licencia', 'demo', 'contratar', 'adquirir', 'comprar', 'venta', 'vendedor', 'comercial', 'asesor', 'cotización', 'información', 'características', 'promoción', 'intención', 'cuánto', 'cuánto cuesta',
+                                'cómo','',  
     'me gustaria que me contacten', 'quisiera que me llamen', 'necesito hablar con alguien', 'busco asesoramiento', 
     'quiero dejar mis datos para', 'deseo que me cotizen', 'me pueden asesorar', 'necesito una cotizacion', 
     'estoy buscando precios', 'quiero informacion sobre precios', 'me interesa el producto', 'deseo adquirir el servicio', 
@@ -652,4 +653,5 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
 
