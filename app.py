@@ -622,24 +622,24 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
                             
                             if any(word in prompt.lower() for word in [
                                 'precio', 'costo', 'cotiz', 'compra', 'licencia', 'demo', 'contratar', 'adquirir', 'comprar', 'venta', 'vendedor', 'comercial', 'asesor', 
-                                'me gustaría que me contacten', 'quisiera que me llamen', 'necesito hablar con alguien', 'busco asesoramiento', 
-                                'quiero dejar mis datos para', 'deseo que me cotizen', 'me pueden asesorar', 'necesito una cotización', 
-                                'estoy buscando precios', 'quiero información sobre precios', 'me interesa el producto', 'deseo adquirir el servicio', 
-                                'presupuesto', 'tarifa', 'pago', 'mensual', 'anual', 'plan', 'precios', 'costos', 'cuanto cuesta', 'valor', 'precio final', 
-                                'oferta', 'promocion', 'descuento', 'caracteristicas', 'especificaciones', 'funciones', 'beneficios', 'comparar', 'vs', 
-                                'versus', 'diferencia', 'mejor', 'recomendar', 'que me conviene', 'intención de contacto', 'quiero hablar con un representante', 
-                                'me pueden contactar', 'me gustaría recibir más información', 'quiero comunicarme', 'quiero contacto', 'me pueden llamar', 
-                                'quiero hablar con un asesor', 'cómo me contacto', 'necesito asistencia', 'requiero atención personalizada', 
-                                'quiero que me atiendan', 'pueden comunicarse conmigo', 'me gustaría coordinar una llamada', 'contacto comercial', 
-                                'formulario de contacto', 'cotización', 'solicitar cotización', 'precio actualizado', 'lista de precios', 'tabla de precios', 
-                                'cuánto vale', 'me pasan el precio', 'me pueden cotizar', 'cuánto sale', 'me interesa comprar', 'quiero comprar', 
-                                'cómo pago', 'formas de pago', 'tarifa mensual', 'plan anual', 'precio unitario', 'precio total', 'modo de pago', 
-                                'pago con tarjeta', 'transferencia', 'cuotas', 'facturación', 'factura', 'recibo', 'comprar ahora', 'adquisición', 
-                                'comparación', 'comparar con', 'diferencias con', 'qué incluye', 'ventajas', 'desventajas', 'beneficios', 'funcionalidades', 
-                                'rendimiento', 'características técnicas', 'es la mejor opción', 'qué recomiendan', 'qué conviene', 'qué diferencia hay', 
-                                'mejor plan', 'más conveniente', 'alternativas', 'recomendación', 'review', 'opiniones', 'quiero información', 
-                                'me gustaría saber más', 'necesito detalles', 'más info', 'cómo funciona', 'de qué se trata', 'documentación', 
-                                'brochure', 'ficha técnica', 'manual', 'guía', 'tutorial', 'instrucciones', 'folleto', 'catálogo']):
+    'me gustaria que me contacten', 'quisiera que me llamen', 'necesito hablar con alguien', 'busco asesoramiento', 
+    'quiero dejar mis datos para', 'deseo que me cotizen', 'me pueden asesorar', 'necesito una cotizacion', 
+    'estoy buscando precios', 'quiero informacion sobre precios', 'me interesa el producto', 'deseo adquirir el servicio', 
+    'presupuesto', 'tarifa', 'pago', 'mensual', 'anual', 'plan', 'precios', 'costos', 'cuanto cuesta', 'valor', 'precio final', 
+    'oferta', 'promocion', 'descuento', 'caracteristicas', 'especificaciones', 'funciones', 'beneficios', 'comparar', 'vs', 
+    'versus', 'diferencia', 'mejor', 'recomendar', 'que me conviene', 'intencion de contacto', 'quiero hablar con un representante', 
+    'me pueden contactar', 'me gustaria recibir mas informacion', 'quiero comunicarme', 'quiero contacto', 'me pueden llamar', 
+    'quiero hablar con un asesor', 'como me contacto', 'necesito asistencia', 'requiero atencion personalizada', 
+    'quiero que me atiendan', 'pueden comunicarse conmigo', 'me gustaria coordinar una llamada', 'contacto comercial', 
+    'formulario de contacto', 'cotizacion', 'solicitar cotizacion', 'precio actualizado', 'lista de precios', 'tabla de precios', 
+    'cuanto vale', 'me pasan el precio', 'me pueden cotizar', 'cuanto sale', 'me interesa comprar', 'quiero comprar', 
+    'como pago', 'formas de pago', 'tarifa mensual', 'plan anual', 'precio unitario', 'precio total', 'modo de pago', 
+    'pago con tarjeta', 'transferencia', 'cuotas', 'facturacion', 'factura', 'recibo', 'comprar ahora', 'adquisicion', 
+    'comparacion', 'comparar con', 'diferencias con', 'que incluye', 'ventajas', 'desventajas', 'beneficios', 'funcionalidades', 
+    'rendimiento', 'caracteristicas tecnicas', 'es la mejor opcion', 'que recomiendan', 'que conviene', 'que diferencia hay', 
+    'mejor plan', 'mas conveniente', 'alternativas', 'recomendacion', 'review', 'opiniones', 'quiero informacion', 
+    'me gustaria saber mas', 'necesito detalles', 'mas info', 'como funciona', 'de que se trata', 'documentacion', 
+    'brochure', 'ficha tecnica', 'manual', 'guia', 'tutorial', 'instrucciones', 'folleto', 'catalogo']):
                                 st.info("💡 **¿Te interesa una cotización personalizada?** Escribe 'quiero dejar mis datos' y te ayudo con el proceso.")
                             
                         except Exception as e:
@@ -652,3 +652,4 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
