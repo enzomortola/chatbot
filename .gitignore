@@ -1,6 +1,5 @@
 # .gitignore
 .streamlit/secrets.toml
-chroma_db_drive/
 __pycache__/
 *.pyc
 .pytest_cache/
