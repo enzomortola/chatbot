@@ -1,0 +1,11 @@
+# requirements.txt
+streamlit==1.31.0
+google-generativeai
+requests
+PyPDF2
+sentence-transformers
+chromadb==0.4.22
+numpy
+pandas
+gspread
+google-auth
