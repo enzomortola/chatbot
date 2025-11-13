@@ -44,31 +44,53 @@ Respuesta:"""
         return "⚠️ Error temporal. Por favor, intenta nuevamente."
 
 def procesar_mensaje(prompt):
-    """Procesar un mensaje del usuario"""
+    """Procesar un mensaje del usuario con detección de 2 niveles"""
+    # Sanitizar entrada
     prompt = sanitize_input(prompt)
     st.session_state.last_query = prompt
     SessionStateManager.add_message("user", prompt)
     
-    is_contact_intent = extract_contact_intent(prompt)
+    # Detectar intención con 2 niveles
+    intencion = extract_contact_intent(prompt)
     
-    if is_contact_intent:
-        contact_response = """¡Excelente! Te contactará un especialista en 24 horas.
+    if intencion == "DIRECTO":
+        # ACTIVA FORMULARIO DIRECTAMENTE
+        contact_response = """¡Perfecto! Para ofrecerte la mejor atención personalizada, completa este formulario.
 
-Complete el formulario para agilizar el proceso."""
+Un especialista te contactará en menos de 24 horas para:
+- ✅ Analizar tus necesidades específicas
+- ✅ Proporcionarte una demostración personalizada
+- ✅ Entregarte una cotización detallada
+
+👇 Completa el formulario a continuación:"""
         
         SessionStateManager.add_message("assistant", contact_response)
         st.session_state.awaiting_form = True
         return contact_response
+        
+    elif intencion == "SUGERENCIA":
+        # SUGIERE contacto pero no fuerza
+        suggestion_response = """¡Me alegra que estés interesado! 
+
+Para ofrecerte información más detallada y una cotización personalizada, puedo conectarte con uno de nuestros especialistas.
+
+💡 **¿Querés que te contactemos?** Simplemente escribí: *"quiero dejar mis datos"* y te ayudo con el proceso.
+
+¿En qué más puedo ayudarte mientras tanto?"""
+        
+        SessionStateManager.add_message("assistant", suggestion_response)
+        return suggestion_response
     
-    # Buscar información relevante
-    with st.spinner("Buscando..."):
-        relevant_docs = search_similar_documents(prompt, top_k=3)  # Reducido para ahorrar tokens
-        response = generate_contextual_response(prompt, relevant_docs)
-        
-        SessionStateManager.add_message("assistant", response)
-        
-        # Sugerir contacto solo si es muy relevante
-        if any(word in prompt.lower() for word in ['precio', 'cotiz', 'comprar']):
-            response += "\n\n💡 **¿Cotización?** Escribe 'quiero contacto'."
-        
-        return response
+    else:
+        # Sin intención detectada → búsqueda normal en documentos
+        with st.spinner("Buscando información..."):
+            relevant_docs = search_similar_documents(prompt, top_k=3)
+            response = generate_contextual_response(prompt, relevant_docs)
+            
+            SessionStateManager.add_message("assistant", response)
+            
+            # Sugerir contacto solo si es relevante
+            if any(word in prompt.lower() for word in ['precio', 'cotiz', 'comprar']):
+                response += "\n\n💡 **¿Cotización?** Escribe 'quiero dejar mis datos'."
+            
+            return response
