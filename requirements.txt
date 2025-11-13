@@ -1,10 +1,9 @@
-# requirements.txt
 streamlit==1.31.0
 google-generativeai
 requests
 PyPDF2
 sentence-transformers
-chromadb==0.4.22
+chromadb==0.4.22  # VERSIÓN ESTABLE
 numpy
 pandas
 gspread
