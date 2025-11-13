@@ -24,7 +24,7 @@ def extract_contact_intent(message):
     
     # NIVEL 2: Palabras de interés medio (sugiere contacto)
     medium_interest_words = [
-        'me interesa', 'interesado', 'interesante', 'me gustaría',
+        'me interesa', 'interesado', 'interesante', 'me gustaría', 'me intereza',
         'cuánto cuesta', 'precio', 'costo', 'valor', 'cotización',
         'presupuesto', 'información sobre precios', 'cuánto sale',
         'me interesa el producto', 'me interesa saber', 'quiero saber más'
