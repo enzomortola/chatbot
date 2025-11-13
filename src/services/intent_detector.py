@@ -24,11 +24,87 @@ def extract_contact_intent(message):
     
     # NIVEL 2: Palabras de interés medio (sugiere contacto)
     medium_interest_words = [
-        'me interesa', 'interesado', 'interesante', 'me gustaría', 'me intereza',
-        'cuánto cuesta', 'precio', 'costo', 'valor', 'cotización',
-        'presupuesto', 'información sobre precios', 'cuánto sale',
-        'me interesa el producto', 'me interesa saber', 'quiero saber más'
-    ]
+        # Contacto directo
+    'contacto', 'contactar', 'contactarme', 'contactenos', 'contactémonos', 
+    'comuniquese', 'comuníquese', 'comuniquémonos', 'comunicarse',
+    
+    # Llamadas
+    'llamar', 'llámenme', 'llamenme', 'llámame', 'llamame', 'telefonear', 
+    'llamada', 'llámeme', 'llameme', 'hablar por teléfono', 'telefono',
+    
+    # Escritura/email
+    'escribir', 'escribanme', 'escríbanme', 'escribame', 'escríbame',
+    'email', 'correo', 'mail', 'e-mail', 'escribirme', 'envíen mail',
+    
+    # Datos personales
+    'dejar mis datos', 'mis datos', 'tomar mis datos', 'registrar mis datos',
+    'datos de contacto', 'información de contacto', 'datos personales',
+    'compartir mis datos', 'proporcionar datos', 'dar mis datos',
+    
+    # Solicitud de contacto
+    'quiero que me contacten', 'deseo que me contacten', 'necesito que me contacten',
+    'que me contacten', 'me pueden contactar', 'pueden contactarme',
+    'agenden contacto', 'solicito contacto', 'requiero contacto',
+    
+    # Ejecutivos/asesores
+    'ejecutivo', 'ejecutiva', 'asesor', 'asesora', 'vendedor', 'vendedora',
+    'especialista', 'consultor', 'consultora', 'agente', 'representante',
+    'hablar con un ejecutivo', 'hablar con ejecutivo', 'hablar con asesor',
+    'un asesor me contacte', 'un ejecutivo me llame', 'persona encargada',
+    
+    # Reuniones
+    'reunión', 'reunion', 'reunirme', 'agendar reunión', 'agendar reunion',
+    'coordinar reunión', 'coordinar reunion', 'programar reunión',
+    'cita', 'agendar cita', 'coordinar cita', 'meeting', 'videollamada',
+    'llamada programada', 'encuentro', 'demostración', 'demo',
+    
+    # Cotizaciones y precios
+    'cotización', 'cotizacion', 'cotizar', 'presupuesto', 'presupuestar',
+    'precio', 'precios', 'costo', 'costos', 'valor', 'tarifa', 'tarifas',
+    'cuánto cuesta', 'cuanto cuesta', 'precio de', 'costo de', 'valor de',
+    'cotización personalizada', 'presupuesto personalizado',
+    
+    # Compra/venta
+    'comprar', 'adquirir', 'contratar', 'suscripción', 'suscripcion',
+    'licencia', 'licencias', 'producto', 'servicio', 'solución',
+    'quiero comprar', 'deseo comprar', 'necesito comprar', 'me interesa comprar',
+    'adquirir el producto', 'contratar el servicio', 'tomar la licencia',
+    
+    # Interés general
+    'me interesa', 'estoy interesado', 'estoy interesada', 'interesado',
+    'interesada', 'tengo interés', 'tengo interes', 'me llama la atención',
+    'quiero saber más', 'deseo información', 'necesito información',
+    'más información', 'mas informacion', 'info', 'información adicional',
+    
+    # Consultas específicas
+    'planes', 'ofertas', 'promociones', 'descuentos', 'beneficios',
+    'características', 'funcionalidades', 'especificaciones',
+    'implementación', 'instalación', 'configuración', 'soporte',
+    
+    # Empresa/organización
+    'empresa', 'organización', 'organizacion', 'negocio', 'pyme',
+    'empresarial', 'corporativo', 'corporativa', 'institucional',
+    
+    # Tiempo/urgencia
+    'cuanto antes', 'lo antes posible', 'urgente', 'inmediato',
+    'pronto', 'rápido', 'rapido', 'ahora', 'hoy',
+    
+    # Variantes con typos comunes
+    'kontacto', 'kontactar', 'kontactarme', 'kontactenos',
+    'llamenme', 'escribanme', 'llameme', 'asesor', 'reunion',
+    'cotizacion', 'presupuesto', 'interes', 'informacion',
+    
+    # Frases completas comunes
+    'me gustaría que me contacten', 'quisiera que me llamen',
+    'necesito hablar con alguien', 'busco asesoramiento',
+    'quiero dejar mis datos para', 'deseo que me cotizen',
+    'me pueden asesorar', 'necesito una cotización',
+    'estoy buscando precios', 'quiero información sobre precios',
+    'me interesa el producto', 'deseo adquirir el servicio',
+    
+    # Variantes con mayúsculas (por si acaso)
+    'CONTACTO', 'LLAMENME', 'ESCRIBANME', 'COTIZACIÓN', 'PRESUPUESTO'
+]
     
     # Si encuentra interés medio → SUGIERE contacto
     if any(word in message_lower for word in medium_interest_words):
