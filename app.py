@@ -16,6 +16,13 @@ import gspread
 from google.oauth2.service_account import Credentials
 import unicodedata
 
+def quitar_tildes(texto):
+    """Elimina tildes y acentos del texto."""
+    return ''.join(
+        c for c in unicodedata.normalize('NFD', texto)
+        if unicodedata.category(c) != 'Mn'
+    )
+
 ADMIN_PASSWORD = "eset_admin_ciceEnzo"
 MAX_TOKENS = 500
 
@@ -284,9 +291,9 @@ def init_chroma_db():
     return client, collection
 
 def extract_contact_intent(message):
-    """Detectar si el usuario quiere dejar datos de contacto"""
-    message_lower = message.lower()
-    return any(keyword in message_lower for keyword in CONTACT_KEYWORDS)
+    """Detectar si el usuario quiere dejar datos de contacto (funciona con o sin tildes)."""
+    message_norm = quitar_tildes(message.lower())
+    return any(quitar_tildes(keyword.lower()) in message_norm for keyword in CONTACT_KEYWORDS)
 
 def generar_resumen_interes(historial_conversacion, interes_seleccionado):
     """Generar un resumen de lo que el cliente está interesado en comprar"""
@@ -684,6 +691,7 @@ Un especialista se pondrá en contacto contigo en un máximo de 24 horas para:
 
 if __name__ == "__main__":
     main()
+
 
 
 
