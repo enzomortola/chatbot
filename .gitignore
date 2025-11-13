@@ -1,7 +1,29 @@
-# .gitignore
+# .gitignore - VERSIÓN FINAL
+
+# Secrets (NUNCA subir a GitHub)
 .streamlit/secrets.toml
+.env
+
+# Caché de Python
 __pycache__/
 *.pyc
 .pytest_cache/
-.env
+*.pyo
+*.pyd
+.Python
+
+# Archivos del sistema
 .DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Nota: chroma_db_drive/ NO se ignora porque Streamlit Cloud la necesita
+# Si es muy pesada (>100MB), usar Git LFS o regenerar en Cloud
