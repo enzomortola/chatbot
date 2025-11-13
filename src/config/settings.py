@@ -8,12 +8,13 @@ PAGE_CONFIG = {
     "layout": "wide"
 }
 
-# Límites y configuraciones
-MAX_TOKENS = 500
-CHUNK_SIZE = 500
-TOP_K_SEARCH = 5
+# LÍMITES CONFIGURABLES - FÁCIL DE MODIFICAR
+MAX_TOKENS = 500                    # Límite de tokens de Gemini
+MAX_RESPONSE_WORDS = 150            # LÍMITE DE PALABRAS EN RESPUESTAS - ¡CAMBIA ESTO!
+CHUNK_SIZE = 500                    # Tamaño de chunks de PDFs
+TOP_K_SEARCH = 5                    # Documentos a buscar
 
-# Modelo de Gemini
+# Modelos
 GEMINI_MODEL = "gemini-2.0-flash-exp"
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
@@ -21,13 +22,10 @@ EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 DOCUMENTS_FOLDER = "documentos"
 CHROMA_PERSIST_DIR = "./chroma_db_drive"
 
-# Palabras clave para detectar intención de contacto
+# Palabras clave de contacto (reducidas para ser más específicas)
 CONTACT_KEYWORDS = [
-    'contacto', 'contactarme', 'dejar mis datos', 'llámenme', 'escribanme',
-    'quiero que me contacten', 'datos de contacto', 'hablar con un ejecutivo',
-    'asesor comercial', 'agendar reunión', 'cotización', 'presupuesto', 'me interesa',
-    'precio', 'costo', 'cotiz', 'compra', 'licencia', 'demo', 'contratar', 'adquirir',
-    'comprar', 'venta', 'vendedor', 'comercial', 'asesor', 'cotización', 'presupuesto'
+    'contacto', 'contactarme', 'cotizacion', 'presupuesto', 'demo', 
+    'asesor', 'hablar con ejecutivo', 'dejar mis datos'
 ]
 
 # Configuración de Google Sheets
@@ -37,13 +35,12 @@ GOOGLE_SHEETS_SCOPE = [
 ]
 SHEET_NAME = "leads_eset"
 
-# Obtener secrets de Streamlit
 def get_secret(key, default=None):
+    """Obtener secret de Streamlit o variable de entorno"""
     try:
         return st.secrets[key]
-    except KeyError:
-        return default
+    except (KeyError, FileNotFoundError):
+        return os.getenv(key, default)
 
-# API Keys
+import os
 GEMINI_API_KEY = get_secret("GEMINI_API_KEY")
-GOOGLE_SHEETS_CREDENTIALS = get_secret("google_sheets")
