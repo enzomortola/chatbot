@@ -70,7 +70,7 @@ def mostrar_chat_publico():
         """)
         
         st.divider()
-        st.markdown("**📞 Contacto**")
+        st.markdown("**📞 +54 9 11 24797731**")
         st.markdown("📧 enzo@cice.ar")
         
         st.divider()
@@ -78,8 +78,8 @@ def mostrar_chat_publico():
         st.info(f"🤖 {len(st.session_state.messages)-1} mensajes")
     
     # Header
-    st.title("🤖 Asesor de CICE")
-    st.markdown("### Especialista en productos de ciberseguridad")
+    st.title("🤖 Asesor de Cice Computación.")
+    st.markdown("### Especialista en productos de ciberseguridad ESET")
     st.markdown("---")
     
     # Mostrar historial
