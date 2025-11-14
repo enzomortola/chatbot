@@ -93,7 +93,7 @@ Un especialista te contactará en menos de 24 horas para:
 
 📧 **Mail inmediato**: enzo@cice.ar  
 💬 **WhatsApp**: [Click aquí para chatear]({WHATSAPP_URL})  
-📝 **Formulario**: Escribí *"quiero dejar mis datos"*
+📝 **Dejar tus datos**: Escribí *"quiero dejar mis datos"*
 
 Un especialista te responderá en menos de 24hs."""
         
