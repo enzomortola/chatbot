@@ -15,7 +15,7 @@ CHUNK_SIZE = 500                    # Tamaño de chunks de PDFs
 TOP_K_SEARCH = 5                    # Documentos a buscar
 
 # Modelos
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-2.0-flash"
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 # Carpetas
