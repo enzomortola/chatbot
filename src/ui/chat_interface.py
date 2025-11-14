@@ -84,10 +84,8 @@ Un especialista te contactará en menos de 24 horas para:
     
     # Paso 3: Agregar incentivo ÚNICO en una sola línea
     if not st.session_state.awaiting_form:
-        incentivo = f"\n\n💬 **¿Querés información comercial directa?** 📧 enzo@cice.ar
-        💬 [WhatsApp]({WHATSAPP_URL}) | 
-        📝 *Escribí 'quiero dejar mis datos'*"
-        response += incentivo
+        incentivo = f"\n\n💬 **¿Querés información comercial directa?** 📧 enzo@cice.ar | 💬 [WhatsApp]({WHATSAPP_URL}) | 📝 *Escribí 'quiero dejar mis datos'*"
+
     
     # Guardar en historial
     SessionStateManager.add_message("assistant", response)
