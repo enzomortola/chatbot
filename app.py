@@ -79,7 +79,6 @@ def mostrar_chat_publico():
     
     # Header
     st.title("🤖 Asesor de Cice Computación.")
-    st.markdown("### Especialista en productos de ciberseguridad ESET")
     st.markdown("---")
     
     # Mostrar historial
