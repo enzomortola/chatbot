@@ -1,4 +1,4 @@
-# src/ui/chat_interface.py - VERSIÓN CON TUS INSTRUCCIONES Y CONTACTO ÚNICO
+# src/ui/chat_interface.py - SIN FORMATO DE FUENTE GRANDE
 import streamlit as st
 from src.services.chroma_service import search_similar_documents
 from src.services.intent_detector import extract_contact_intent
@@ -8,12 +8,12 @@ from src.utils.session_manager import SessionStateManager
 from src.utils.validators import sanitize_input
 
 # CONFIGURACIÓN DE CONTACTO
-WHATSAPP_NUMBER = "541124797731"  # <--- CAMBIA ESTO por tu número real
+WHATSAPP_NUMBER = "541140000000"  # <--- CAMBIA ESTO
 WHATSAPP_MESSAGE = "Hola, me contacto desde el asistente de ESET. Necesito información comercial."
 WHATSAPP_URL = f"https://wa.me/{WHATSAPP_NUMBER}?text={WHATSAPP_MESSAGE.replace(' ', '%20')}"
 
 def generate_contextual_response(query, context_documents):
-    """Genera respuesta con TONO y BREVEDAD controlados por instrucciones"""
+    """Genera respuesta con TONO y BREVEDAD controlados"""
     try:
         client = GeminiClient(GEMINI_API_KEY)
         if not client.model:
@@ -26,19 +26,16 @@ def generate_contextual_response(query, context_documents):
             if len(context_text.split()) > 300:
                 context_text = " ".join(context_text.split()[:300]) + "..."
         
-        # INSTRUCCIONES DEL USUARIO (ponelas acá)
+        # INSTRUCCIONES DEL USUARIO
         system_instructions = """Instrucciones de comportamiento:
 - Trabajás para CICE, líder Cristian Sánchez y Enzo Mórtola (ventas ESET)
-- Tu función es mostrar productos y convertir: vender o capturar contactos
+- Tu función es mostrar productos y convertir: vender o capturar contacto
 - Para precios/cotizaciones, INSISTÍ en que deben contactarse
-- Respuestas potentes pero concisas 
+- Respuestas potentes pero concisas (máx 3-4 líneas)
 - TONO: profesional, empático, confiado
 - Para empresas: enfoque en productividad, protección, reputación, ahorro
 - Para usuarios: enfoque en tranquilidad, simplicidad, soporte
-- NO agregues invitaciones de contacto al final (eso lo controla el sistema)
-- NO hagas menciones sobre las fuentes que tengas cargadas, solo las usas para tu conocimiento
-- trata de que los usuarios les interese contactarnos y que esten interesados en adquirir un antivirus para su bienestar
-- si alguien pregunta algo NO REFERIDO a ESET o antivirus, o cosas relacionadas, decile amablemente no estas entrenado para hablar sobre eso"""
+- NO agregues invitaciones de contacto al final (eso lo controla el sistema)"""
 
         prompt = f"""{system_instructions}
 
@@ -85,21 +82,12 @@ Un especialista te contactará en menos de 24 horas para:
     # Paso 2: Generar respuesta con contexto
     response = generate_contextual_response(prompt, relevant_docs)
     
-    # Paso 3: Agregar incentivo ÚNICO con mail, WhatsApp y formulario
+    # Paso 3: Agregar incentivo ÚNICO en una sola línea
     if not st.session_state.awaiting_form:
-        incentivo = f"""
----
-💬 **¿Querés información comercial directa?**
-
-📧 **Mail inmediato**: enzo@cice.ar  
-💬 **WhatsApp**: [Click aquí para chatear]({WHATSAPP_URL})  
-📝 **Dejar tus datos**: Escribí *"quiero dejar mis datos"*
-
-Un especialista te responderá en menos de 24hs."""
-        
+        incentivo = f"\n\n💬 **¿Querés información comercial directa?** 📧 enzo@cice.ar | 💬 [WhatsApp]({WHATSAPP_URL}) | 📝 *Escribí 'quiero dejar mis datos'*"
         response += incentivo
     
-    # Guardar en historial (respuesta completa con incentivo)
+    # Guardar en historial
     SessionStateManager.add_message("assistant", response)
     
     return response
