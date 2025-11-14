@@ -65,7 +65,6 @@ def mostrar_chat_publico():
         - Información sobre productos
         - Características y beneficios
         - Comparación de soluciones
-        - Cotizaciones personalizadas
         
         *Escribe tu consulta en el chat*
         """)
@@ -79,7 +78,7 @@ def mostrar_chat_publico():
         st.info(f"🤖 {len(st.session_state.messages)-1} mensajes")
     
     # Header
-    st.title("🤖 Asistente de Ventas ESET")
+    st.title("🤖 Asesor de CICE")
     st.markdown("### Especialista en productos de ciberseguridad")
     st.markdown("---")
     
