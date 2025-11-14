@@ -9,7 +9,7 @@ class SessionStateManager:
         """Inicializar todos los estados necesarios"""
         if "messages" not in st.session_state:
             st.session_state.messages = [
-                {"role": "assistant", "content": "🛡️ Asistente de Ventas ESET. ¿Sobre qué producto querés info? Si querés una demo, escribí 'quiero dejar mis datos' y un especialista se va a contactar a la brevedad."}
+                {"role": "assistant", "content": "🛡️ Asistente de Ventas ESET. ¿Sobre qué producto querés info? Si querés una demo, escribí 'quiero dejar mis datos' y un especialista se va a contactar a la brevedad o hace clic acá: wa.me/5491124797731"}
             ]
         
         if "uso_tokens" not in st.session_state:
