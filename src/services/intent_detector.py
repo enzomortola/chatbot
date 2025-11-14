@@ -1,4 +1,4 @@
-# src/services/intent_detector.py - VERSIÓN LIMPIA (solo frases directas)
+# src/services/intent_detector.py - SOLO FRASES DIRECTAS
 from src.config.settings import CONTACT_KEYWORDS
 
 def extract_contact_intent(message):
@@ -24,6 +24,5 @@ def extract_contact_intent(message):
             return "DIRECTO"
     
     # NO detectar palabras sueltas como "productos" o "cotización" aquí
-    # Eso se manejará con incentivo después de la respuesta
     
     return "NINGUNA"
