@@ -8,7 +8,7 @@ from src.utils.session_manager import SessionStateManager
 from src.utils.validators import sanitize_input
 
 # CONFIGURACIÓN DE CONTACTO
-WHATSAPP_NUMBER = "541140000000"  # <--- CAMBIA ESTO
+WHATSAPP_NUMBER = "541124797731"  # <--- CAMBIA ESTO
 WHATSAPP_MESSAGE = "Hola, me contacto desde el asistente de ESET. Necesito información comercial."
 WHATSAPP_URL = f"https://wa.me/{WHATSAPP_NUMBER}?text={WHATSAPP_MESSAGE.replace(' ', '%20')}"
 
