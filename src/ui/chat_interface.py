@@ -11,7 +11,7 @@ from src.utils.validators import sanitize_input
 # CONFIGURACIÓN DEL LINK DE WHATSAPP
 # Reemplaza con tu número real en formato internacional sin '+' ni espacios
 # Ejemplo: "541112345678" para +54 11 1234-5678
-WHATSAPP_NUMBER = "541140000000"  # <--- CAMBIA ESTO POR TU NÚMERO
+WHATSAPP_NUMBER = "541124797731"  # <--- CAMBIA ESTO POR TU NÚMERO
 WHATSAPP_MESSAGE = "Hola, me contacto desde el asistente de ESET. Necesito información comercial."
 WHATSAPP_URL = f"https://wa.me/{WHATSAPP_NUMBER}?text={WHATSAPP_MESSAGE.replace(' ', '%20')}"
 
