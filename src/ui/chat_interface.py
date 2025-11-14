@@ -84,7 +84,17 @@ Un especialista te contactará en menos de 24 horas para:
     
     # Paso 3: Agregar incentivo ÚNICO en una sola línea
     if not st.session_state.awaiting_form:
-        incentivo = f"\n\n💬 **¿Querés información comercial directa?** 📧 enzo@cice.ar | 💬 [WhatsApp]({WHATSAPP_URL}) | 📝 *Escribí 'quiero dejar mis datos'*"
+        incentivo = f"""
+---
+💬 **¿Querés información comercial directa?**
+
+Tienes dos opciones rápidas:
+
+1️⃣ **WhatsApp directo**: [Click aquí para chatear]({WHATSAPP_URL})  
+2️⃣ **Formulario**: Escribí *"quiero dejar mis datos"* y te contactamos en 24h"""
+
+# Por esto (en una sola línea sin saltos bruscos):
+incentivo = f"\n\n💬 **¿Querés información comercial directa?**  \n💬 [WhatsApp]({WHATSAPP_URL})  \n📝 *Escribí 'quiero dejar mis datos'*"
 
     
     # Guardar en historial
