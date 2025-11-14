@@ -1,5 +1,4 @@
-# src/ui/chat_interface.py - VERSIÓN FINAL CON INCENTIVO AGRESIVO
-# src/ui/chat_interface.py - VERSIÓN FINAL CON INCENTIVO ÚNICO Y WHATSAPP
+# src/ui/chat_interface.py - VERSIÓN CON TUS INSTRUCCIONES Y CONTACTO ÚNICO
 import streamlit as st
 from src.services.chroma_service import search_similar_documents
 from src.services.intent_detector import extract_contact_intent
@@ -8,38 +7,48 @@ from src.config.settings import GEMINI_API_KEY, MAX_RESPONSE_WORDS
 from src.utils.session_manager import SessionStateManager
 from src.utils.validators import sanitize_input
 
-# CONFIGURACIÓN DEL LINK DE WHATSAPP
-# Reemplaza con tu número real en formato internacional sin '+' ni espacios
-# Ejemplo: "541112345678" para +54 11 1234-5678
-WHATSAPP_NUMBER = "541124797731"  # <--- CAMBIA ESTO POR TU NÚMERO
+# CONFIGURACIÓN DE CONTACTO
+WHATSAPP_NUMBER = "541124797731"  # <--- CAMBIA ESTO por tu número real
 WHATSAPP_MESSAGE = "Hola, me contacto desde el asistente de ESET. Necesito información comercial."
 WHATSAPP_URL = f"https://wa.me/{WHATSAPP_NUMBER}?text={WHATSAPP_MESSAGE.replace(' ', '%20')}"
 
 def generate_contextual_response(query, context_documents):
-    """Genera respuesta usando contexto SIN incentivo de contacto"""
+    """Genera respuesta con TONO y BREVEDAD controlados por instrucciones"""
     try:
         client = GeminiClient(GEMINI_API_KEY)
         if not client.model:
             return "🔧 El modelo no está disponible."
         
         # Preparar contexto
+        context_text = ""
         if context_documents:
-            context = "\n\n".join(context_documents[:3])
-            if len(context.split()) > 300:
-                context = " ".join(context.split()[:300]) + "..."
-            
-            prompt = f"""Eres un experto vendedor de ESET. Responde esta pregunta usando la información:
-
-{context}
-
-Pregunta: {query}
-
-Responde de forma profesional, clara y concisa. NO agregues invitaciones a contacto al final."""
-        else:
-            prompt = f"""Eres un vendedor experto de ESET. Responde a: {query}
-
-Responde de forma profesional. NO agregues invitaciones a contacto al final."""
+            context_text = "\n\n".join(context_documents[:3])
+            if len(context_text.split()) > 300:
+                context_text = " ".join(context_text.split()[:300]) + "..."
         
+        # INSTRUCCIONES DEL USUARIO (ponelas acá)
+        system_instructions = """Instrucciones de comportamiento:
+- Trabajás para CICE, líder Cristian Sánchez y Enzo Mórtola (ventas ESET)
+- Tu función es mostrar productos y convertir: vender o capturar contactos
+- Para precios/cotizaciones, INSISTÍ en que deben contactarse
+- Respuestas potentes pero concisas 
+- TONO: profesional, empático, confiado
+- Para empresas: enfoque en productividad, protección, reputación, ahorro
+- Para usuarios: enfoque en tranquilidad, simplicidad, soporte
+- NO agregues invitaciones de contacto al final (eso lo controla el sistema)
+- NO hagas menciones sobre las fuentes que tengas cargadas, solo las usas para tu conocimiento
+- trata de que los usuarios les interese contactarnos y que esten interesados en adquirir un antivirus para su bienestar
+- si alguien pregunta algo NO REFERIDO a ESET o antivirus, o cosas relacionadas, decile amablemente no estas entrenado para hablar sobre eso"""
+
+        prompt = f"""{system_instructions}
+
+Información para responder:
+{context_text}
+
+Pregunta del usuario: {query}
+
+Respuesta concisa y profesional:"""
+
         response, _ = client.generate_content(prompt, max_words=MAX_RESPONSE_WORDS)
         return response
     except Exception as e:
@@ -47,7 +56,7 @@ Responde de forma profesional. NO agregues invitaciones a contacto al final."""
         return "⚠️ Error temporal. Intenta nuevamente."
 
 def procesar_mensaje(prompt):
-    """Procesa mensaje: BUSCA → RESPONDE → INCENTIVO ÚNICO CON WHATSAPP"""
+    """Procesa mensaje: BUSCA → RESPONDE → INCENTIVO ÚNICO"""
     # Sanitizar entrada
     prompt = sanitize_input(prompt)
     st.session_state.last_query = prompt
@@ -76,21 +85,21 @@ Un especialista te contactará en menos de 24 horas para:
     # Paso 2: Generar respuesta con contexto
     response = generate_contextual_response(prompt, relevant_docs)
     
-    # Paso 3: Agregar incentivo ÚNICO con WhatsApp y formulario
-    # SOLO si no se activó el formulario
+    # Paso 3: Agregar incentivo ÚNICO con mail, WhatsApp y formulario
     if not st.session_state.awaiting_form:
         incentivo = f"""
 ---
-💬 **¿Querés hablar con un especialista ahora?**
+💬 **¿Querés información comercial directa?**
 
-Tienes dos opciones rápidas:
+📧 **Mail inmediato**: enzo@cice.ar  
+💬 **WhatsApp**: [Click aquí para chatear]({WHATSAPP_URL})  
+📝 **Formulario**: Escribí *"quiero dejar mis datos"*
 
-1️⃣ **WhatsApp directo**: [Click aquí para chatear]({WHATSAPP_URL})  
-2️⃣ **Formulario**: Escribí *"quiero dejar mis datos"* y te contactamos en 24h"""
+Un especialista te responderá en menos de 24hs."""
         
-        # Guardar respuesta principal primero
-        SessionStateManager.add_message("assistant", response)
-        # Luego agregar incentivo como mensaje separado para mejor UX
         response += incentivo
+    
+    # Guardar en historial (respuesta completa con incentivo)
+    SessionStateManager.add_message("assistant", response)
     
     return response
