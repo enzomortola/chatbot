@@ -1,4 +1,4 @@
-# app.py - VERSION CON SIDEBAR SOLO PARA ADMIN
+# app.py - VERSIÓN COMPATIBLE CON STREAMLIT < 1.29
 import streamlit as st
 from src.config.settings import PAGE_CONFIG
 from src.utils.session_manager import SessionStateManager
@@ -13,7 +13,7 @@ def main():
     # Inicializar estado
     SessionStateManager.initialize()
     
-    # Detectar si es admin por URL
+    # Detectar admin por URL (usando experimental para compatibilidad)
     try:
         query_params = st.query_params
     except AttributeError:
@@ -21,40 +21,12 @@ def main():
     
     is_admin_url = "admin" in query_params and query_params["admin"] == ["true"]
     
-    # SIDEBAR SOLO PARA ADMIN AUTENTICADO
-    if st.session_state.get('admin_authenticated', False) and is_admin_url:
-        mostrar_sidebar_admin()
-    
-    # LÓGICA PRINCIPAL
     if is_admin_url and not st.session_state.get('admin_authenticated'):
         mostrar_login_admin()
     elif st.session_state.get('admin_authenticated') and is_admin_url:
         mostrar_dashboard_admin()
     else:
-        mostrar_chat_publico()  # Usuarios normales: NO sidebar
-
-def mostrar_sidebar_admin():
-    """Sidebar SOLO para admin autenticado"""
-    with st.sidebar:
-        st.header("🔧 Panel de Admin")
-        
-        # Muestra uso de tokens
-        if st.session_state.get('uso_tokens'):
-            total_consultas = len(st.session_state.uso_tokens)
-            st.metric("Consultas", total_consultas)
-        
-        if st.button("📊 Dashboard"):
-            st.session_state.show_admin = True
-            st.rerun()
-        
-        if st.button("🚪 Cerrar Sesión"):
-            st.session_state.admin_authenticated = False
-            st.session_state.show_admin = False
-            try:
-                st.query_params.clear()
-            except:
-                st.experimental_set_query_params()
-            st.rerun()
+        mostrar_chat_publico()
 
 def mostrar_login_admin():
     """Página de login admin oculta"""
@@ -76,14 +48,36 @@ def mostrar_login_admin():
     
     with col2:
         if st.button("← Volver al chat"):
+            # Limpiar query params
             try:
                 st.query_params.clear()
-            except:
+            except AttributeError:
                 st.experimental_set_query_params()
             st.rerun()
 
 def mostrar_chat_publico():
-    """Chat público: SIN sidebar, SIN opciones de admin"""
+    """Chat público sin opciones de admin"""
+    # Sidebar limpio
+    with st.sidebar:
+        st.header("💬 Chat ESET")
+        st.markdown("""
+        **¿En qué puedo ayudarte?**
+        - Información sobre productos
+        - Características y beneficios
+        - Comparación de soluciones
+        - Cotizaciones personalizadas
+        
+        *Escribe tu consulta en el chat*
+        """)
+        
+        st.divider()
+        st.markdown("**📞 Contacto**")
+        st.markdown("📧 enzo@cice.ar")
+        
+        st.divider()
+        st.markdown("**🔧 Estado**")
+        st.info(f"🤖 {len(st.session_state.messages)-1} mensajes")
+    
     # Header
     st.title("🤖 Asistente de Ventas ESET")
     st.markdown("### Especialista en productos de ciberseguridad")
