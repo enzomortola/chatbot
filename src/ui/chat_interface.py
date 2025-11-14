@@ -70,7 +70,7 @@ Un especialista te contactará en menos de 24 horas para:
     
     # Paso 3: SIEMPRE agregar incentivo de contacto (excepto si ya se activó formulario)
     if not st.session_state.awaiting_form:
-        incentivo = "\n\n---\n💡 **¿Querés hablar con una persona real?** \nSimplemente escribí: *quiero dejar mis datos* o ingresa al siguiente link: http://wa.me/5491124797731"
+        incentivo = "\n\n---\n💡 **¿Querés hablar con una persona real?** \nSimplemente escribí: *quiero dejar mis datos*, o ingresa al siguiente link: http://wa.me/5491124797731"
         response += incentivo
     
     # Guardar en historial
