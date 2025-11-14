@@ -54,7 +54,6 @@ Respuesta concisa y profesional:"""
 
 def procesar_mensaje(prompt):
     """Procesa mensaje: BUSCA → RESPONDE → INCENTIVO ÚNICO"""
-    # Sanitizar entrada
     prompt = sanitize_input(prompt)
     st.session_state.last_query = prompt
     SessionStateManager.add_message("user", prompt)
@@ -82,9 +81,13 @@ Un especialista te contactará en menos de 24 horas para:
     # Paso 2: Generar respuesta con contexto
     response = generate_contextual_response(prompt, relevant_docs)
     
-    # Paso 3: Agregar incentivo ÚNICO en una sola línea
+    # Paso 3: Agregar incentivo con INTERLINEADO
     if not st.session_state.awaiting_form:
-        incentivo = f"\n\n💬 **¿Querés información comercial directa?** 📧 enzo@cice.ar | 💬 [WhatsApp]({WHATSAPP_URL}) | 📝 *Escribí 'quiero dejar mis datos'*"
+        # ‼️ ESTE ES EL BLOQUE QUE CAMBIASTE
+        incentivo = f"""\n\n💬 **¿Querés información comercial directa?**
+📧 **Mail**: enzo@cice.ar  
+💬 **WhatsApp**: [Click aquí para chatear]({WHATSAPP_URL})  
+📝 **Formulario**: Escribí *'quiero dejar mis datos'*"""
         response += incentivo
     
     # Guardar en historial
